@@ -1,0 +1,8 @@
+FROM alpine:latest AS builder
+RUN apk add --no-cache ffmpeg
+
+FROM n8nio/n8n:latest
+USER root
+COPY --from=builder /usr/bin/ffmpeg /usr/bin/ffmpeg
+COPY --from=builder /usr/lib /usr/lib
+USER node

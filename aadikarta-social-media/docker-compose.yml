@@ -1,0 +1,193 @@
+version: '3.8'
+
+services:
+  # --- Application Services ---
+  app:
+    build: .
+    ports:
+      - "8003:8000"
+    env_file: .env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      minio:
+        condition: service_started
+    networks:
+      - ai-automation-net
+    volumes:
+      - .:/app
+
+  image-service:
+    build: ./image_service
+    ports:
+      - "8001:8001"
+    env_file: .env
+    depends_on:
+      - minio
+      - stable-diffusion
+    networks:
+      - ai-automation-net
+    environment:
+      - SD_API_URL=http://stable-diffusion:7860
+
+  video-service:
+    build: ./video_service
+    ports:
+      - "8002:8002"
+    env_file: .env
+    depends_on:
+      - minio
+    networks:
+      - ai-automation-net
+
+  # --- AI Infrastructure ---
+
+  stable-diffusion:
+    image: siutin/stable-diffusion-webui-docker:latest-cpu
+    ports:
+      - "7860:7860"
+    environment:
+      - CLI_ARGS=--api --listen --no-half --skip-torch-cuda-test
+    command: ./webui.sh --listen --port 7860 --api --no-half --skip-torch-cuda-test
+    volumes:
+      - sd_data:/data
+    networks:
+      - ai-automation-net
+    # deploy: ... (uncomment for GPU)
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  # --- Workflow Automation ---
+  n8n:
+    build:
+      context: .
+      dockerfile: Dockerfile.n8n
+    user: root
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=n8n
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - NODE_ENV=production
+      - WEBHOOK_URL=http://localhost:5678/
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=db
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${N8N_DB_NAME:-n8n}
+      - DB_POSTGRESDB_USER=${N8N_DB_USER:-admin}
+      - DB_POSTGRESDB_PASSWORD=${N8N_DB_PASSWORD:-password123}
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - FACEBOOK_PAGE_ID=${FACEBOOK_PAGE_ID}
+      - FACEBOOK_PAGE_ACCESS_TOKEN=${FACEBOOK_PAGE_ACCESS_TOKEN}
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+      - NODE_FUNCTION_ALLOW_BUILTIN=fs,https
+      - NODES_EXCLUDE=[]
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n-data:/data/n8n-work
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - ai-automation-net
+
+  # --- Core Infrastructure ---
+  db:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password123}
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      # Separate DBs can be created via init script, 
+      # for simplicity we assume n8n/app might use different DBs via manual setup or 
+      # single DB with public schema. 
+      # Production: use init.sql to create 'n8n' and 'app_db' databases.
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - ai-automation-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-admin} -d ${POSTGRES_DB:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ai-automation-net
+
+  minio:
+    image: minio/minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin}
+    volumes:
+      - minio_data:/data
+    networks:
+      - ai-automation-net
+    command: server /data --console-address ":9001"
+
+  # --- Monitoring ---
+  prometheus:
+    image: prom/prometheus
+    volumes:
+      - ./monitoring/prometheus:/etc/prometheus
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    networks:
+      - ai-automation-net
+
+  loki:
+    image: grafana/loki:latest
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./monitoring/loki/loki-config.yaml:/etc/loki/local-config.yaml
+    networks:
+      - ai-automation-net
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+      - loki
+    restart: unless-stopped
+    networks:
+      - ai-automation-net
+
+networks:
+  ai-automation-net:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  minio_data:
+  n8n_data:
+  sd_data:
+  redis_data:
+  prometheus_data:
+  grafana_data:

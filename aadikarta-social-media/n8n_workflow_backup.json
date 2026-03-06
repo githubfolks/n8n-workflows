@@ -1,0 +1,253 @@
+[
+    {
+        "updatedAt": "2026-02-19T23:45:37.380Z",
+        "createdAt": "2026-02-19T20:00:51.595Z",
+        "id": "OoB2BTg02Tbttv6c",
+        "name": "Social Media Automation",
+        "description": null,
+        "active": false,
+        "isArchived": false,
+        "nodes": [
+            {
+                "parameters": {},
+                "name": "Cron Trigger",
+                "type": "n8n-nodes-base.cron",
+                "typeVersion": 1,
+                "position": [
+                    -400,
+                    208
+                ],
+                "id": "33ae2f15-74c6-48d0-a83d-53c629ff9af2"
+            },
+            {
+                "parameters": {
+                    "authentication": "headerAuth",
+                    "requestMethod": "POST",
+                    "url": "http://app:8000/api/v1/generate/content",
+                    "jsonParameters": true,
+                    "options": {},
+                    "bodyParametersJson": "{\n  \"topic\": \"horoscope\",\n  \"tone\": \"professional\",\n  \"platform\": \"generic\"\n}"
+                },
+                "name": "Generate Content",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 1,
+                "position": [
+                    -208,
+                    208
+                ],
+                "id": "5d926658-e6d4-4dd0-8f18-30674d429b92",
+                "credentials": {
+                    "httpHeaderAuth": {
+                        "id": "GTIBU6fIXF000B7I",
+                        "name": "Header Auth account"
+                    }
+                }
+            },
+            {
+                "parameters": {
+                    "authentication": "headerAuth",
+                    "requestMethod": "POST",
+                    "url": "http://app:8000/api/v1/generate/image",
+                    "responseFormat": "file",
+                    "jsonParameters": true,
+                    "options": {
+                        "bodyContentType": "json"
+                    },
+                    "bodyParametersJson": "={\n  \"prompt\": \"{{ $json.image_prompt.replace(/\"/g, '\\\\\"') }}\"\n}"
+                },
+                "name": "Generate Image",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 1,
+                "position": [
+                    0,
+                    0
+                ],
+                "id": "c3c86c8b-298b-4b09-8499-dffd77b585fd",
+                "credentials": {
+                    "httpHeaderAuth": {
+                        "id": "GTIBU6fIXF000B7I",
+                        "name": "Header Auth account"
+                    }
+                }
+            },
+            {
+                "parameters": {
+                    "authentication": "headerAuth",
+                    "requestMethod": "POST",
+                    "url": "http://app:8000/api/v1/generate/video",
+                    "responseFormat": "file",
+                    "jsonParameters": true,
+                    "options": {
+                        "bodyContentType": "multipart-form-data"
+                    },
+                    "sendBinaryData": true
+                },
+                "name": "Generate Video",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 1,
+                "position": [
+                    208,
+                    304
+                ],
+                "id": "e0d0f26a-ebca-4373-a5e0-57bb8e1d97ab",
+                "credentials": {
+                    "httpHeaderAuth": {
+                        "id": "GTIBU6fIXF000B7I",
+                        "name": "Header Auth account"
+                    }
+                }
+            },
+            {
+                "parameters": {
+                    "text": "={{$node[\"Generate Content\"].json[\"caption\"]}}",
+                    "additionalFields": {}
+                },
+                "name": "Twitter",
+                "type": "n8n-nodes-base.twitter",
+                "typeVersion": 1,
+                "position": [
+                    400,
+                    512
+                ],
+                "id": "659330ae-cd8c-45bb-adb8-b440049a0979",
+                "credentials": {
+                    "twitterOAuth1Api": {
+                        "id": "cEsHJv1FaxXLnEXJ",
+                        "name": "X OAuth account"
+                    }
+                }
+            },
+            {
+                "parameters": {
+                    "method": "POST",
+                    "url": "http://app:8000/api/v1/generate/post-video-to-facebook",
+                    "authentication": "predefinedCredentialType",
+                    "nodeCredentialType": "facebookGraphApi",
+                    "sendBody": true,
+                    "contentType": "multipart-form-data",
+                    "bodyParameters": {
+                        "parameters": [
+                            {
+                                "parameterType": "formBinaryData",
+                                "name": "file",
+                                "inputDataFieldName": "data"
+                            },
+                            {
+                                "name": "page_id",
+                                "value": "997105940153591"
+                            },
+                            {
+                                "name": "access_token",
+                                "value": "EAA63V3uBwxoBQynCtOd9S6p9w8RZA3kOfVYkOvJPNc84TeVDYTZCDT8GGwyWAcN1XShigz8tUdiAt6eYRS3VkyxwmNPzuvVhzuofbnQyMfLZBARjp9m9hbvkqVYquTGxSIxUjlrjAE7uiZCp9tedt1sTeoPJVZAogGg5JcCJdS5xZAWhTeZCQZBJDwTQ55y36MP1vmF0B1vdMrQ8ZBAKMDSa6mZCPkHPpcNpi3dH6giopLGwMZD"
+                            },
+                            {
+                                "name": "description",
+                                "value": "={{$node[\"Generate Content\"].json[\"caption\"]}}"
+                            }
+                        ]
+                    },
+                    "options": {}
+                },
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.4,
+                "position": [
+                    464,
+                    160
+                ],
+                "id": "4c5e685d-8b08-41ed-afef-e84c98696051",
+                "name": "HTTP Request1",
+                "credentials": {
+                    "facebookGraphApi": {
+                        "id": "enFgWmXPEfBUKjXH",
+                        "name": "Facebook Graph account"
+                    }
+                }
+            }
+        ],
+        "connections": {
+            "Cron Trigger": {
+                "main": [
+                    [
+                        {
+                            "node": "Generate Content",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Generate Content": {
+                "main": [
+                    [
+                        {
+                            "node": "Generate Image",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Generate Image": {
+                "main": [
+                    [
+                        {
+                            "node": "Generate Video",
+                            "type": "main",
+                            "index": 0
+                        },
+                        {
+                            "node": "Twitter",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            },
+            "Generate Video": {
+                "main": [
+                    [
+                        {
+                            "node": "HTTP Request1",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
+            }
+        },
+        "settings": {
+            "executionOrder": "v1",
+            "binaryMode": "separate",
+            "availableInMCP": false
+        },
+        "staticData": null,
+        "meta": {
+            "templateCredsSetupCompleted": true
+        },
+        "pinData": {},
+        "versionId": "a376f0a6-d587-427a-88f2-02bb0e83e79a",
+        "activeVersionId": null,
+        "versionCounter": 275,
+        "triggerCount": 0,
+        "tags": [],
+        "shared": [
+            {
+                "updatedAt": "2026-02-19T20:00:51.595Z",
+                "createdAt": "2026-02-19T20:00:51.595Z",
+                "role": "workflow:owner",
+                "workflowId": "OoB2BTg02Tbttv6c",
+                "projectId": "ZR2GgfdZiehPsnK3",
+                "project": {
+                    "updatedAt": "2026-02-19T12:54:23.566Z",
+                    "createdAt": "2026-02-19T12:25:41.362Z",
+                    "id": "ZR2GgfdZiehPsnK3",
+                    "name": "Aadikarta Org <kumavikram@gmail.com>",
+                    "type": "personal",
+                    "icon": null,
+                    "description": null,
+                    "creatorId": "74f46534-6efd-4699-86fe-a0ad74d55481"
+                }
+            }
+        ]
+    }
+]

@@ -1,0 +1,1 @@
+Give me steps to setup a n8n workflow which can post vaidic horoscopes on daily basis on facebook. I want to setup n8n on my local mac system. The workflow should be able to create Indian vaidic horoscope contents. Contents should be able to convert into images and videos based on Indian sentiment. Image and videos should have texts and male voice in Hindi.

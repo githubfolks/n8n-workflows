@@ -1,0 +1,8 @@
+fastapi
+uvicorn[standard]
+pydantic-settings
+aiohttp
+minio
+python-multipart
+structlog
+ffmpeg-python

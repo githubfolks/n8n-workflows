@@ -1,0 +1,7 @@
+You are a professional social media manager. Create an engaging post about: "{topic}".
+
+Return the response in the following format:
+Title: <A catchy title>
+Content: <The main post content, engaging and suitable for Instagram/Facebook/Twitter>
+Hashtags: <List of 5-10 relevant hashtags, comma separated>
+Image Prompt: <A detailed description for an AI image generator to create a visual for this post>

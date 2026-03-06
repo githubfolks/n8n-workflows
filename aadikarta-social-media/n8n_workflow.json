@@ -1,0 +1,385 @@
+{
+    "name": "Daily Horoscope FB (Fixed Reel)",
+    "nodes": [
+        {
+            "parameters": {
+                "triggerTimes": {
+                    "item": [
+                        {
+                            "hour": 5,
+                            "minute": 30
+                        }
+                    ]
+                }
+            },
+            "name": "Cron",
+            "type": "n8n-nodes-base.cron",
+            "typeVersion": 1,
+            "position": [
+                200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "values": {
+                    "string": [
+                        {
+                            "name": "signs",
+                            "value": "\u092e\u0947\u0937,\u0935\u0943\u0937\u092d,\u092e\u093f\u0925\u0941\u0928,\u0915\u0930\u094d\u0915,\u0938\u093f\u0902\u0939,\u0915\u0928\u094d\u092f\u093e,\u0924\u0941\u0932\u093e,\u0935\u0943\u0936\u094d\u091a\u093f\u0915,\u0927\u0928\u0941,\u092e\u0915\u0930,\u0915\u0941\u0902\u092d,\u092e\u0940\u0928"
+                        }
+                    ]
+                }
+            },
+            "name": "Set Signs",
+            "type": "n8n-nodes-base.set",
+            "typeVersion": 2,
+            "position": [
+                400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const signsString = $json.signs;\nreturn signsString.split(',').map(sign => ({ json: { signs: sign.trim() } }));"
+            },
+            "name": "Split Signs",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                600,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "https://api.openai.com/v1/chat/completions",
+                "method": "POST",
+                "sendBody": true,
+                "specifyBody": "json",
+                "jsonParameters": true,
+                "bodyParametersJson": "={\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"\u0906\u091c \u0915\u0940 \u0924\u093e\u0930\u0940\u0916: {{ $now }}\n\u0930\u093e\u0936\u093f: {{ $json.signs }}\n150 \u0936\u092c\u094d\u0926\u094b\u0902 \u092e\u0947\u0902 \u0935\u0948\u0926\u093f\u0915 \u0930\u093e\u0936\u093f\u092b\u0932 \u0932\u093f\u0916\u0947\u0902\u0964 \u0915\u0930\u093f\u092f\u0930, \u092a\u094d\u0930\u0947\u092e, \u0938\u094d\u0935\u093e\u0938\u094d\u0925\u094d\u092f, \u0909\u092a\u093e\u092f, \u0936\u0941\u092d \u0930\u0902\u0917, \u0936\u0941\u092d \u0905\u0902\u0915 \u0936\u093e\u092e\u093f\u0932 \u0915\u0930\u0947\u0902\u0964\"}]}",
+                "headerParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "Authorization",
+                            "value": "=\"Bearer \" + $env.OPENAI_API_KEY"
+                        },
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                }
+            },
+            "name": "Generate Horoscope",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                800,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "const mapping = {\n  '\u092e\u0947\u0937': 'aries',\n  '\u0935\u0943\u0937\u092d': 'taurus',\n  '\u092e\u093f\u0925\u0941\u0928': 'gemini',\n  '\u0915\u0930\u094d\u0915': 'cancer',\n  '\u0938\u093f\u0902\u0939': 'leo',\n  '\u0915\u0928\u094d\u092f\u093e': 'virgo',\n  '\u0924\u0941\u0932\u093e': 'libra',\n  '\u0935\u0943\u0936\u094d\u091a\u093f\u0915': 'scorpio',\n  '\u0927\u0928\u0941': 'sagittarius',\n  '\u092e\u0915\u0930': 'capricorn',\n  '\u0915\u0941\u0902\u092d': 'aquarius',\n  '\u092e\u0940\u0928': 'pisces'\n};\nconst hindiSign = $node[\"Split Signs\"].json[\"signs\"];\nreturn [{\n  json: {\n    sign: hindiSign,\n    english_sign: mapping[hindiSign] || hindiSign.toLowerCase(),\n    content: $json.choices[0].message.content.trim()\n  }\n}];"
+            },
+            "name": "Extract Content",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1000,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "operation": "insert",
+                "schema": {
+                    "__rl": true,
+                    "mode": "list",
+                    "value": "public"
+                },
+                "table": {
+                    "__rl": true,
+                    "value": "daily_horoscopes",
+                    "mode": "list",
+                    "cachedResultName": "daily_horoscopes"
+                },
+                "columns": {
+                    "mappingMode": "defineBelow",
+                    "value": {
+                        "sign": "={{ $json.sign }}",
+                        "content": "={{ $json.content }}"
+                    }
+                }
+            },
+            "name": "Save to PostgreSQL",
+            "type": "n8n-nodes-base.postgres",
+            "typeVersion": 2,
+            "position": [
+                1200,
+                300
+            ],
+            "credentials": {
+                "postgres": {
+                    "id": "Zg1nQFnGjnbpcEbG",
+                    "name": "Postgres"
+                }
+            }
+        },
+        {
+            "parameters": {
+                "jsCode": "const fs = require('fs');\nconst englishSign = $node[\"Extract Content\"].json.english_sign || 'unknown';\nconst filePath = `/root/.n8n-files/${englishSign}.mp4`;\n\n// Ensure directory exists\nif (!fs.existsSync('/root/.n8n-files/')){\n    fs.mkdirSync('/root/.n8n-files/', { recursive: true });\n}\n\nfs.copyFileSync('/data/n8n-work/dummy.mp4', filePath);\n\nreturn [{\n  json: {\n    ...$json,\n    saved_file: filePath,\n    dummy_mode: true\n  }\n}];"
+            },
+            "name": "Generate & Save Voice",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                1400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "command": "=echo \"Skipping reel creation, using dummy video for {{ $node[\"Extract Content\"].json.english_sign }}\""
+            },
+            "name": "Create Reel",
+            "type": "n8n-nodes-base.executeCommand",
+            "typeVersion": 1,
+            "position": [
+                1600,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "filePath": "=/root/.n8n-files/{{ $node[\"Extract Content\"].json.english_sign }}.mp4"
+            },
+            "name": "Read Video File",
+            "type": "n8n-nodes-base.readBinaryFile",
+            "typeVersion": 1,
+            "position": [
+                1800,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.FACEBOOK_PAGE_ID + \"/video_reels?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
+                "method": "POST",
+                "sendBody": true,
+                "sendQuery": false,
+                "specifyBody": "json",
+                "jsonParameters": true,
+                "bodyParametersJson": "={ \"upload_phase\": \"start\" }",
+                "headerParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/json"
+                        }
+                    ]
+                }
+            },
+            "name": "Initialize Reel",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                2000,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "\nconst https = require('https');\nconst fs = require('fs');\n\nconst uploadUrl = $('Initialize Reel').first().json.upload_url;\n\n// In a native JS Code node, environment variables are accessed via process.env\nconst accessToken = (process.env.FACEBOOK_PAGE_ACCESS_TOKEN || '').trim();\nif (!accessToken) {\n  throw new Error(\"Missing FACEBOOK_PAGE_ACCESS_TOKEN in environment!\");\n}\n\nconst filePath = '/root/.n8n-files/dummy.mp4';\n\nif (!fs.existsSync(filePath)) {\n  throw new Error(\"Video file not found! \" + filePath);\n}\n\nconst fileData = fs.readFileSync(filePath);\nconst parsedUrl = new URL(uploadUrl);\n\nconst options = {\n  hostname: parsedUrl.hostname,\n  path: parsedUrl.pathname + parsedUrl.search,\n  method: 'POST',\n  headers: {\n    'Authorization': `OAuth ${accessToken}`,\n    'offset': '0',\n    'file_size': fileData.length.toString(),\n    'Content-Length': fileData.length.toString()\n  }\n};\n\nreturn new Promise((resolve, reject) => {\n  const req = https.request(options, (res) => {\n    let responseData = '';\n    res.on('data', (chunk) => responseData += chunk);\n    res.on('end', () => {\n      try {\n        resolve([{ json: JSON.parse(responseData || '{}'), status: res.statusCode }]);\n      } catch (e) {\n        resolve([{ json: { raw: responseData }, status: res.statusCode }]);\n      }\n    });\n  });\n\n  req.on('error', (e) => reject(e));\n  req.write(fileData);\n  req.end();\n});\n"
+            },
+            "name": "Upload Reel",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2200,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.FACEBOOK_PAGE_ID + \"/video_reels?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
+                "method": "POST",
+                "sendBody": true,
+                "specifyBody": "keypair",
+                "sendQuery": false,
+                "jsonParameters": true,
+                "headerParametersUi": {
+                    "parameter": [
+                        {
+                            "name": "Content-Type",
+                            "value": "application/x-www-form-urlencoded"
+                        }
+                    ]
+                },
+                "bodyParameters": {
+                    "parameters": [
+                        {
+                            "name": "upload_phase",
+                            "value": "finish"
+                        },
+                        {
+                            "name": "video_id",
+                            "value": "={{ $node[\"Initialize Reel\"].json.video_id }}"
+                        },
+                        {
+                            "name": "video_state",
+                            "value": "PUBLISHED"
+                        },
+                        {
+                            "name": "description",
+                            "value": "={{ $node[\"Extract Content\"].json.content }}"
+                        }
+                    ]
+                }
+            },
+            "name": "Publish Reel",
+            "type": "n8n-nodes-base.httpRequest",
+            "typeVersion": 4,
+            "position": [
+                2400,
+                300
+            ]
+        },
+        {
+            "parameters": {
+                "jsCode": "if ($json.error) {\n  throw new Error(`FACEBOOK API ERROR: ${$json.error.message} (Type: ${$json.error.type})`);\n}\nif (!$json.success) {\n  throw new Error(`FACEBOOK PUBLISH FAILED: Success flag not received. Response: ${JSON.stringify($json)}`);\n}\nreturn [{\n  json: {\n    facebook_success: true,\n    video_id: $node[\"Initialize Reel\"].json.video_id,\n    raw_response: $json\n  }\n}];"
+            },
+            "name": "Facebook Response Check",
+            "type": "n8n-nodes-base.code",
+            "typeVersion": 2,
+            "position": [
+                2600,
+                300
+            ]
+        }
+    ],
+    "connections": {
+        "Cron": {
+            "main": [
+                [
+                    {
+                        "node": "Set Signs",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Set Signs": {
+            "main": [
+                [
+                    {
+                        "node": "Split Signs",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Split Signs": {
+            "main": [
+                [
+                    {
+                        "node": "Generate Horoscope",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Generate Horoscope": {
+            "main": [
+                [
+                    {
+                        "node": "Extract Content",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Extract Content": {
+            "main": [
+                [
+                    {
+                        "node": "Save to PostgreSQL",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Save to PostgreSQL": {
+            "main": [
+                [
+                    {
+                        "node": "Generate & Save Voice",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Generate & Save Voice": {
+            "main": [
+                [
+                    {
+                        "node": "Create Reel",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Create Reel": {
+            "main": [
+                [
+                    {
+                        "node": "Read Video File",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Read Video File": {
+            "main": [
+                [
+                    {
+                        "node": "Initialize Reel",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Initialize Reel": {
+            "main": [
+                [
+                    {
+                        "node": "Upload Reel",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Upload Reel": {
+            "main": [
+                [
+                    {
+                        "node": "Publish Reel",
+                        "type": "main"
+                    }
+                ]
+            ]
+        },
+        "Publish Reel": {
+            "main": [
+                [
+                    {
+                        "node": "Facebook Response Check",
+                        "type": "main"
+                    }
+                ]
+            ]
+        }
+    }
+}

@@ -4,7 +4,7 @@ try {
     const uploadUrl = $input.first().json.upload_url;
 
     // Secure Access Token via Memory
-    const accessToken = $node["Global Config"].json.fb_token;
+    const accessToken = $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim();
 
     // Identify the dynamic video file name
     const englishSign = $('Extract Content').first().json.english_sign;

@@ -2,12 +2,12 @@ const https = require('https');
 
 const videoId = $node["Initialize Reel"].json.video_id;
 const description = $node["Extract Content"].json.content;
-const pageId = $node["Global Config"].json.fb_page_id;
+const pageId = $env.FACEBOOK_PAGE_ID;
 
 // Securely access Token globally via Docker Env Mapping
-const accessToken = $node["Global Config"].json.fb_token;
+const accessToken = $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim();
 
-
+console.log("Access Token:", accessToken)
 const payload = JSON.stringify({
     upload_phase: 'finish',
     video_id: videoId,

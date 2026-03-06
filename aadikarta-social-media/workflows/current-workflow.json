@@ -1,0 +1,434 @@
+{
+  "name": "Daily Horoscope FB (Fixed Reel)",
+  "nodes": [
+    {
+      "parameters": {
+        "triggerTimes": {
+          "item": [
+            {
+              "hour": 5,
+              "minute": 30
+            }
+          ]
+        }
+      },
+      "name": "Cron",
+      "type": "n8n-nodes-base.cron",
+      "typeVersion": 1,
+      "position": [
+        -160,
+        -240
+      ],
+      "id": "cb08f522-038d-4bb0-96c5-e5df99b86101"
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            {
+              "name": "signs",
+              "value": "मेष,वृषभ,मिथुन,कर्क,सिंह,कन्या,तुला,वृश्चिक,धनु,मकर,कुंभ,मीन"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Set Signs",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 2,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b5dc35a0-4b00-4e5b-955e-13ddcb6ecb76"
+    },
+    {
+      "parameters": {
+        "jsCode": "const signsString = $json.signs;\nreturn signsString.split(',').map(sign => ({ json: { signs: sign.trim() } }));"
+      },
+      "name": "Split Signs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        400,
+        0
+      ],
+      "id": "2dccd26f-ef71-4143-b5f6-ffe8d76a7940"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"आज की तारीख: {{$now}}\\nराशि: {{$json.signs}}\\n150 शब्दों में वैदिक राशिफल लिखें। करियर, प्रेम, स्वास्थ्य, उपाय, शुभ रंग, शुभ अंक शामिल करें।\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "name": "Generate Horoscope",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        608,
+        0
+      ],
+      "id": "eb74ad5d-fa86-4e60-871a-ca92067925be",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "ENEPUPYJUPPvj5rs",
+          "name": "openai-bearer-auth"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const mapping = {\n  'मेष': 'aries',\n  'वृषभ': 'taurus',\n  'मिथुन': 'gemini',\n  'कर्क': 'cancer',\n  'सिंह': 'leo',\n  'कन्या': 'virgo',\n  'तुला': 'libra',\n  'वृश्चिक': 'scorpio',\n  'धनु': 'sagittarius',\n  'मकर': 'capricorn',\n  'कुंभ': 'aquarius',\n  'मीन': 'pisces'\n};\nconst hindiSign = $node[\"Split Signs\"].json[\"signs\"];\nreturn [{\n  json: {\n    sign: hindiSign,\n    english_sign: mapping[hindiSign] || hindiSign.toLowerCase(),\n    content: $json.choices[0].message.content.trim()\n  }\n}];"
+      },
+      "name": "Extract Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        800,
+        0
+      ],
+      "id": "4281025c-e1db-4bde-a5f8-f061f7fd5679"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "daily_horoscopes",
+          "mode": "list",
+          "cachedResultName": "daily_horoscopes"
+        },
+        "dataMode": "defineBelow",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "sign",
+              "value": "=={{ $json.sign }}"
+            },
+            {
+              "column": "content",
+              "value": "=={{ $json.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Save to PostgreSQL",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        0
+      ],
+      "id": "ec1ded15-418b-41c3-b738-42c4c3493d31",
+      "credentials": {
+        "postgres": {
+          "id": "7pV1djG59jL8365q",
+          "name": "Postgres account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const fs = require('fs');\nconst englishSign = $node[\"Extract Content\"].json.english_sign || 'unknown';\nconst filePath = `/root/.n8n-files/${englishSign}.mp4`;\n\n// Ensure directory exists\nif (!fs.existsSync('/root/.n8n-files/')){\n    fs.mkdirSync('/root/.n8n-files/', { recursive: true });\n}\n\nfs.copyFileSync('/data/n8n-work/dummy.mp4', filePath);\n\nreturn [{\n  json: {\n    ...$json,\n    saved_file: filePath,\n    dummy_mode: true\n  }\n}];"
+      },
+      "name": "Generate & Save Voice",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "b597f637-80c3-4a79-b313-cf90bc438fe4"
+    },
+    {
+      "parameters": {
+        "command": "=echo \"Skipping reel creation, using dummy video for {{ $node[\"Extract Content\"].json.english_sign }}\""
+      },
+      "name": "Create Reel",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [
+        1408,
+        0
+      ],
+      "id": "0a2e56b4-510f-4763-8408-b0eec63ccfe1"
+    },
+    {
+      "parameters": {
+        "filePath": "=/root/.n8n-files/{{ $node[\"Extract Content\"].json.english_sign }}.mp4"
+      },
+      "name": "Read Video File",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        1600,
+        0
+      ],
+      "id": "188980f1-2bac-40be-a7de-bee8be6e934c"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.FACEBOOK_PAGE_ID + \"/video_reels?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"upload_phase\": \"start\" }",
+        "options": {}
+      },
+      "name": "Initialize Reel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        1808,
+        0
+      ],
+      "id": "26fc7d46-5295-4d82-8b17-7abce44f2f9e"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n    const https = require('https');\n    const fs = require('fs');\n    const uploadUrl = $input.first().json.upload_url;\n\n    // Secure Access Token via Memory\n    const accessToken = $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim();\n    \n    // Identify the dynamic video file name\n    const englishSign = $('Extract Content').first().json.english_sign;\n    const filePath = \"/root/.n8n-files/\" + englishSign + \".mp4\";\n\n    if (!fs.existsSync(filePath)) {\n        throw new Error(\"Could not find video at: \" + filePath);\n    }\n\n    // Natively read the binary bytes from disk\n    const binaryBuffer = fs.readFileSync(filePath);\n\n    // Manually split the URL into Hostname and Path to bypass the missing URL class\n    const urlWithoutProtocol = uploadUrl.substring(8);\n    const firstSlashIndex = urlWithoutProtocol.indexOf('/');\n    const hostname = urlWithoutProtocol.substring(0, firstSlashIndex);\n    const path = urlWithoutProtocol.substring(firstSlashIndex);\n\n    const options = {\n        hostname: hostname,\n        path: path,\n        method: 'POST',\n        headers: {\n            'Authorization': `OAuth ${accessToken}`,\n            'offset': '0',\n            'file_size': binaryBuffer.length.toString(),\n            'Content-Length': binaryBuffer.length.toString(),\n            // THIS is the secret header that Facebook's server requires to parse the payload properly!\n            'Content-Type': 'application/x-www-form-urlencoded',\n            'Connection': 'keep-alive',\n            'Accept': '*/* '\n        }\n    };\n\n    return await new Promise((resolve, reject) => {\n        const req = https.request(options, (res) => {\n            let responseData = '';\n            res.on('data', (chunk) => responseData += chunk);\n            res.on('end', () => resolve([{ json: { body: responseData, status: res.statusCode } }]));\n        });\n\n        req.on('error', (e) => resolve([{ json: { execute_error: e.message } }]));\n        req.write(binaryBuffer);\n        req.end();\n    });\n\n} catch (masterError) {\n    return [{ json: { CRASH: masterError.message, stack: masterError.stack } }];\n}\n"
+      },
+      "name": "Upload Reel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2000,
+        0
+      ],
+      "id": "a06be0e9-6a4c-4e7b-9d05-4a9ff05ba13e"
+    },
+    {
+      "parameters": {
+        "jsCode": "if ($json.error) {\n  throw new Error(`FACEBOOK API ERROR: ${$json.error.message} (Type: ${$json.error.type})`);\n}\nif (!$json.success) {\n  throw new Error(`FACEBOOK PUBLISH FAILED: Success flag not received. Response: ${JSON.stringify($json)}`);\n}\nreturn [{\n  json: {\n    facebook_success: true,\n    video_id: $node[\"Initialize Reel\"].json.video_id,\n    raw_response: $json\n  }\n}];"
+      },
+      "name": "Facebook Response Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        0
+      ],
+      "id": "1f39848a-37f2-453b-b2b2-5662e12c3b33"
+    },
+    {
+      "parameters": {
+        "jsCode": "const https = require('https');\n\nconst videoId = $node[\"Initialize Reel\"].json.video_id;\nconst description = $node[\"Extract Content\"].json.content;\nconst pageId = $env.FACEBOOK_PAGE_ID;\n\n// Securely access Token globally via Docker Env Mapping\nconst accessToken = $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim();\n\nconsole.log(\"Access Token:\", accessToken)\nconst payload = JSON.stringify({\n    upload_phase: 'finish',\n    video_id: videoId,\n    video_state: 'PUBLISHED',\n    description: description,\n    access_token: accessToken    // THIS WAS THE MISSING KEY CAUSING THE NULL CRASH!\n});\n\nconst options = {\n    hostname: 'graph.facebook.com',\n    path: `/v18.0/${pageId}/video_reels`, // Clean URL, no query string\n    method: 'POST',\n    headers: {\n        'Content-Type': 'application/json',\n        'Content-Length': Buffer.byteLength(payload)\n    }\n};\n\nreturn await new Promise((resolve, reject) => {\n    const req = https.request(options, (res) => {\n        let responseData = '';\n        res.on('data', chunk => responseData += chunk);\n        res.on('end', () => resolve([{ json: { body: JSON.parse(responseData || '{}'), status: res.statusCode } }]));\n    });\n    req.on('error', e => resolve([{ json: { execute_error: e.message } }]));\n    req.write(payload);\n    req.end();\n});\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2208,
+        0
+      ],
+      "id": "b2a9a09f-9dae-4b7e-b27d-a52df01524f9",
+      "name": "Publish Reel"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "efbd44b7-36d0-4e9f-861c-3e5af7d85e9b",
+              "name": "fb_token",
+              "value": "={ $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "136fb3a6-186d-4fad-8be9-7181f24deb8f",
+              "name": "fb_page_id",
+              "value": "={{ $env.FACEBOOK_PAGE_ID }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -112,
+        0
+      ],
+      "id": "8b4b6606-5869-49f4-86b8-ad51bc4daa4f",
+      "name": "Global Config"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Cron": {
+      "main": [
+        [
+          {
+            "node": "Global Config",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Signs": {
+      "main": [
+        [
+          {
+            "node": "Split Signs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Signs": {
+      "main": [
+        [
+          {
+            "node": "Generate Horoscope",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Horoscope": {
+      "main": [
+        [
+          {
+            "node": "Extract Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Content": {
+      "main": [
+        [
+          {
+            "node": "Save to PostgreSQL",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save to PostgreSQL": {
+      "main": [
+        [
+          {
+            "node": "Generate & Save Voice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate & Save Voice": {
+      "main": [
+        [
+          {
+            "node": "Create Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Reel": {
+      "main": [
+        [
+          {
+            "node": "Read Video File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Video File": {
+      "main": [
+        [
+          {
+            "node": "Initialize Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Reel": {
+      "main": [
+        [
+          {
+            "node": "Upload Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Reel": {
+      "main": [
+        [
+          {
+            "node": "Publish Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish Reel": {
+      "main": [
+        [
+          {
+            "node": "Facebook Response Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Global Config": {
+      "main": [
+        [
+          {
+            "node": "Set Signs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "a94707a7-f076-41dd-bddd-749720a5a313",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "85eb66cfde6ba940fb2eacd85c7f0140143cada0c159cdffbfbb9e0539b49ed5"
+  },
+  "id": "VHaVC5ScQx4kktwv",
+  "tags": []
+}

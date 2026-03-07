@@ -211,6 +211,34 @@
         2600,
         500
       ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://app:8003/api/v1/story/webhook/n8n/video-completed",
+        "sendBody": true,
+        "specifyBody": "keypair",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "project_id",
+              "value": "={{ $node[\"Webhook\"].json.body.project_id }}"
+            }
+          ]
+        },
+        "options": {
+          "bodyContentType": "multipart-form-data",
+          "sendBinaryData": true,
+          "binaryPropertyName": "video_file:data"
+        }
+      },
+      "name": "Save Video to Backend",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        2800,
+        400
+      ]
     }
   ],
   "connections": {
@@ -309,6 +337,27 @@
         [
           {
             "node": "Instagram Response Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Facebook Response Check": {
+      "main": [
+        [
+          {
+            "node": "Save Video to Backend",
+            "type": "main"
+          }
+        ]
+      ]
+    },
+    "Instagram Response Check": {
+      "main": [
+        [
+          {
+            "node": "Save Video to Backend",
             "type": "main",
             "index": 0
           }

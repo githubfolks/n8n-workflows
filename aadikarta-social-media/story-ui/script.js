@@ -1,17 +1,29 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Views
+    const viewDashboard = document.getElementById('view-dashboard');
     const viewInput = document.getElementById('view-input');
     const viewLoadingStory = document.getElementById('view-loading-story');
     const viewStory = document.getElementById('view-story');
     const viewLoadingScenes = document.getElementById('view-loading-scenes');
     const viewScenes = document.getElementById('view-scenes');
+    const viewProjectDetails = document.getElementById('view-project-details');
 
     // Elements
+    const projectsContainer = document.getElementById('projects-container');
     const storyInput = document.getElementById('story-input');
     const storyDisplay = document.getElementById('story-display');
     const scenesContainer = document.getElementById('scenes-container');
 
+    const detailTopicTitle = document.getElementById('detail-topic-title');
+    const detailStoryDisplay = document.getElementById('detail-story-display');
+    const detailScenesContainer = document.getElementById('detail-scenes-container');
+    const detailVideoContainer = document.getElementById('detail-video-container');
+    const detailStatusBadge = document.getElementById('detail-status-badge');
+
     // Buttons
+    const btnCreateNew = document.getElementById('btn-create-new');
+    const btnBackToDashFromInput = document.getElementById('btn-back-to-dash-from-input');
+    const btnBackToDashFromDetails = document.getElementById('btn-back-to-dash-from-details');
     const btnGenerateStory = document.getElementById('btn-generate-story');
     const btnBackToInput = document.getElementById('btn-back-to-input');
     const btnGenerateScenes = document.getElementById('btn-generate-scenes');
@@ -26,13 +38,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const modalSceneTitle = document.getElementById('modal-scene-title');
 
     // App State
+    let currentTopic = '';
     let generatedStory = '';
     let generatedScenes = [];
     let currentlyEditingSceneId = null;
 
     // View Switching Logic
     function switchView(viewToShow) {
-        const views = [viewInput, viewLoadingStory, viewStory, viewLoadingScenes, viewScenes];
+        const views = [viewDashboard, viewInput, viewLoadingStory, viewStory, viewLoadingScenes, viewScenes, viewProjectDetails];
         views.forEach(v => {
             if (v === viewToShow) {
                 // Remove hidden first, wait a ms for display:block to apply, then add active
@@ -52,6 +65,20 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // Navigation
+    btnCreateNew.addEventListener('click', () => {
+        storyInput.value = '';
+        switchView(viewInput);
+    });
+
+    btnBackToDashFromInput.addEventListener('click', () => {
+        switchView(viewDashboard);
+    });
+
+    btnBackToDashFromDetails.addEventListener('click', () => {
+        switchView(viewDashboard);
+    });
+
     // Story Generation Flow
     btnGenerateStory.addEventListener('click', async () => {
         const inputText = storyInput.value.trim();
@@ -61,6 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        currentTopic = inputText;
         switchView(viewLoadingStory);
 
         // Check if the input is requesting the mock story
@@ -144,22 +172,37 @@ document.addEventListener('DOMContentLoaded', () => {
     btnPublish.addEventListener('click', async () => {
         const span = btnPublish.querySelector('span');
         const originalText = span.textContent;
-        span.textContent = 'Publishing...';
+        span.textContent = 'Saving to Database...';
         btnPublish.disabled = true;
 
         try {
-            const response = await fetch('/webhook-test/generate-video', {
+            // 1. Save data to Postgres via FastAPI
+            const saveResponse = await fetch('/api/v1/story/save-draft', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ story: generatedStory, scenes: generatedScenes })
+                body: JSON.stringify({
+                    topic: currentTopic,
+                    story: generatedStory,
+                    scenes: generatedScenes
+                })
             });
 
-            if (!response.ok) throw new Error('Webhook Error');
+            if (!saveResponse.ok) throw new Error('Failed to save to database');
+            const saveResult = await saveResponse.json();
+            const projectId = saveResult.project_id;
 
-            alert('Video generation and publishing workflow triggered successfully!');
+            // 2. Trigger Publishing via FastAPI (which invokes n8n)
+            span.textContent = 'Triggering n8n...';
+            const publishResponse = await fetch(`/api/v1/story/publish-project/${projectId}`, {
+                method: 'POST'
+            });
+
+            if (!publishResponse.ok) throw new Error('Failed to trigger publishing');
+
+            alert('Data saved to database and Video generation workflow triggered successfully!');
         } catch (error) {
-            console.error('Error triggering webhook:', error);
-            alert('Failed to trigger the publishing workflow. Please check if n8n is running.');
+            console.error('Error in publish flow:', error);
+            alert('Failed to publish. ' + error.message);
         } finally {
             span.textContent = originalText;
             btnPublish.disabled = false;
@@ -225,4 +268,99 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Note: Mock generators removed in favor of real API calls.
+
+    // ============================================
+    // Dashboard & History Logic
+    // ============================================
+    async function fetchProjects() {
+        try {
+            const response = await fetch('/api/v1/story/projects');
+            if (!response.ok) throw new Error('Failed to fetch projects');
+            const projects = await response.json();
+            renderDashboard(projects);
+        } catch (error) {
+            console.error('Error fetching dashboard data:', error);
+            projectsContainer.innerHTML = '<p class="error-msg">Could not load active projects.</p>';
+        }
+    }
+
+    function renderDashboard(projects) {
+        projectsContainer.innerHTML = '';
+        if (projects.length === 0) {
+            projectsContainer.innerHTML = '<p style="grid-column: 1/-1; text-align:center; color: #a1a1aa;">No stories found. Create your first one!</p>';
+            return;
+        }
+
+        projects.forEach(project => {
+            const card = document.createElement('div');
+            card.className = 'scene-card'; // Reuse the glass card style
+
+            // Format Date
+            const dateObj = new Date(project.created_at);
+            const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            card.innerHTML = `
+                <div class="scene-number">${escapeHtml(project.status.toUpperCase())}</div>
+                <div class="scene-desc" style="font-weight:600; font-size:1.1rem; margin-bottom: 0.5rem; color:white;">
+                    ${escapeHtml(project.topic_prompt)}
+                </div>
+                <div style="font-size: 0.8rem; color:#a1a1aa;">${dateStr}</div>
+                <div class="edit-hint" style="margin-top:1rem;">Click to view 👁️</div>
+            `;
+
+            card.addEventListener('click', () => openProjectDetails(project));
+            projectsContainer.appendChild(card);
+        });
+    }
+
+    function openProjectDetails(project) {
+        detailTopicTitle.textContent = project.topic_prompt;
+        detailStoryDisplay.textContent = project.generated_story || "No story text.";
+
+        // Render Scenes visually
+        detailScenesContainer.innerHTML = '';
+        if (project.scenes_json && Array.isArray(project.scenes_json)) {
+            project.scenes_json.forEach(scene => {
+                const scard = document.createElement('div');
+                scard.className = 'scene-card';
+                scard.innerHTML = `
+                    <div class="scene-number">Scene ${scene.id}</div>
+                    <div class="scene-desc">${escapeHtml(scene.description)}</div>
+                `;
+                detailScenesContainer.appendChild(scard);
+            });
+        } else {
+            detailScenesContainer.innerHTML = '<p>No scenes generated.</p>';
+        }
+
+        // Setup Video
+        detailVideoContainer.innerHTML = '';
+        detailStatusBadge.textContent = 'Status: ' + project.status.toUpperCase();
+
+        if (project.status === 'completed' && project.video_path) {
+            // Because the frontend and backend share the Docker filesystem through nginx proxy
+            // The video can be accessed directly or we just provide a placeholder indicator
+            detailStatusBadge.className = 'status-badge mt-1 success-bg';
+            detailVideoContainer.className = '';
+            detailVideoContainer.innerHTML = `
+                <div class="video-placeholder" style="background: rgba(16, 185, 129, 0.1); border-color: #10b981;">
+                    <p style="color:#10b981; font-weight:600;">✔️ Video Rendered Successfully!</p>
+                    <p style="font-size:0.8rem; margin-top:0.5rem;">File: ${escapeHtml(project.video_path)}</p>
+                </div>
+            `;
+        } else if (project.status === 'publishing') {
+            detailStatusBadge.className = 'status-badge mt-1 publishing-bg';
+            detailVideoContainer.className = 'video-placeholder';
+            detailVideoContainer.innerHTML = `<p>Video is currently building in n8n...</p>`;
+        } else {
+            detailStatusBadge.className = 'status-badge mt-1 draft-bg';
+            detailVideoContainer.className = 'video-placeholder';
+            detailVideoContainer.innerHTML = `<p>No video rendering in progress.</p>`;
+        }
+
+        switchView(viewProjectDetails);
+    }
+
+    // Initialize
+    fetchProjects();
 });

@@ -24,8 +24,26 @@
             <p class="subtitle">Transform your ideas into visual scenes</p>
         </header>
 
+        <!-- View 0: Dashboard (Landing Page) -->
+        <section id="view-dashboard" class="view active">
+            <div class="dashboard-header">
+                <h2>My Stories</h2>
+                <button id="btn-create-new" class="primary-btn small-btn">
+                    <span>+ Create New Story</span>
+                    <div class="btn-glow"></div>
+                </button>
+            </div>
+            <div class="projects-grid" id="projects-container">
+                <!-- Project cards get injected here -->
+            </div>
+        </section>
+
         <!-- View 1: Input Lines -->
-        <section id="view-input" class="view active">
+        <section id="view-input" class="view hidden">
+            <div class="dashboard-header">
+                <h2>New Story Idea</h2>
+                <button id="btn-back-to-dash-from-input" class="secondary-btn small-btn">Back to Dashboard</button>
+            </div>
             <div class="input-group">
                 <label for="story-input">Enter your idea (will generate a 30-second video script):</label>
                 <textarea id="story-input"
@@ -80,6 +98,32 @@
                     <span>Publish Video</span>
                     <div class="btn-glow"></div>
                 </button>
+            </div>
+        </section>
+
+        <!-- View 6: Project Details View -->
+        <section id="view-project-details" class="view hidden">
+            <div class="dashboard-header">
+                <h2 id="detail-topic-title">Project Details</h2>
+                <button id="btn-back-to-dash-from-details" class="secondary-btn small-btn">Back to Dashboard</button>
+            </div>
+
+            <div class="detail-grid">
+                <div class="detail-text-column">
+                    <h3>Story</h3>
+                    <div class="story-content content-box" id="detail-story-display"></div>
+
+                    <h3 style="margin-top: 1.5rem;">Scenes</h3>
+                    <div class="scenes-grid" id="detail-scenes-container"></div>
+                </div>
+
+                <div class="detail-video-column">
+                    <h3>Final Video</h3>
+                    <div id="detail-video-container" class="video-placeholder">
+                        <p>Video is processing or not available.</p>
+                    </div>
+                    <div class="status-badge mt-1" id="detail-status-badge">Status: Unknown</div>
+                </div>
             </div>
         </section>
     </main>

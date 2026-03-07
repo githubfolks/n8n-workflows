@@ -1,5 +1,5 @@
 {
-  "name": "Daily Horoscope FB (Fixed Reel)",
+  "name": "aadikarta-post-workflow",
   "nodes": [
     {
       "parameters": {
@@ -16,9 +16,10 @@
       "type": "n8n-nodes-base.cron",
       "typeVersion": 1,
       "position": [
-        200,
-        300
-      ]
+        0,
+        0
+      ],
+      "id": "69c9b79d-aacc-47f9-850e-e8de8b5070f8"
     },
     {
       "parameters": {
@@ -29,15 +30,17 @@
               "value": "मेष,वृषभ,मिथुन,कर्क,सिंह,कन्या,तुला,वृश्चिक,धनु,मकर,कुंभ,मीन"
             }
           ]
-        }
+        },
+        "options": {}
       },
       "name": "Set Signs",
       "type": "n8n-nodes-base.set",
       "typeVersion": 2,
       "position": [
-        400,
-        300
-      ]
+        208,
+        0
+      ],
+      "id": "f3e66fa3-0f25-4cef-abc6-ce5e8f5b26d2"
     },
     {
       "parameters": {
@@ -47,38 +50,36 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        600,
-        300
-      ]
+        400,
+        0
+      ],
+      "id": "37e6b9b9-e2cd-49ed-ae91-921b84be0c5b"
     },
     {
       "parameters": {
-        "url": "https://api.openai.com/v1/chat/completions",
         "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBearerAuth",
         "sendBody": true,
         "specifyBody": "json",
-        "jsonParameters": true,
-        "bodyParametersJson": "={\"model\":\"gpt-4o-mini\",\"messages\":[{\"role\":\"user\",\"content\":\"आज की तारीख: {{ $now }}\nराशि: {{ $json.signs }}\n150 शब्दों में वैदिक राशिफल लिखें। करियर, प्रेम, स्वास्थ्य, उपाय, शुभ रंग, शुभ अंक शामिल करें।\"}]}",
-        "headerParametersUi": {
-          "parameter": [
-            {
-              "name": "Authorization",
-              "value": "=\"Bearer \" + $env.OPENAI_API_KEY"
-            },
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        }
+        "jsonBody": "={\n  \"model\": \"gpt-4o-mini\",\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"आज की तारीख: {{$now}}\\nराशि: {{$json.signs}}\\n150 शब्दों में वैदिक राशिफल लिखें। करियर, प्रेम, स्वास्थ्य, उपाय, शुभ रंग, शुभ अंक शामिल करें।\"\n    }\n  ]\n}",
+        "options": {}
       },
       "name": "Generate Horoscope",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        800,
-        300
-      ]
+        608,
+        0
+      ],
+      "id": "44aa2467-96bd-4524-a356-5f6e58611412",
+      "credentials": {
+        "httpBearerAuth": {
+          "id": "3xMq6SDeBNk2jzR1",
+          "name": "OpenAI Token"
+        }
+      }
     },
     {
       "parameters": {
@@ -88,13 +89,13 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1000,
-        300
-      ]
+        800,
+        0
+      ],
+      "id": "e998135e-e89b-4489-9dae-7cea2178daff"
     },
     {
       "parameters": {
-        "operation": "insert",
         "schema": {
           "__rl": true,
           "mode": "list",
@@ -106,25 +107,33 @@
           "mode": "list",
           "cachedResultName": "daily_horoscopes"
         },
-        "columns": {
-          "mappingMode": "defineBelow",
-          "value": {
-            "sign": "={{ $json.sign }}",
-            "content": "={{ $json.content }}"
-          }
-        }
+        "dataMode": "defineBelow",
+        "valuesToSend": {
+          "values": [
+            {
+              "column": "sign",
+              "value": "=={{ $json.sign }}"
+            },
+            {
+              "column": "content",
+              "value": "=={{ $json.content }}"
+            }
+          ]
+        },
+        "options": {}
       },
       "name": "Save to PostgreSQL",
       "type": "n8n-nodes-base.postgres",
       "typeVersion": 2,
       "position": [
-        1200,
-        300
+        1008,
+        0
       ],
+      "id": "9bbaf6aa-6e0f-45ab-bb32-81abc5254604",
       "credentials": {
         "postgres": {
-          "id": "Zg1nQFnGjnbpcEbG",
-          "name": "Postgres"
+          "id": "5UK3zXmv5jYIF1oQ",
+          "name": "Postgres account"
         }
       }
     },
@@ -136,9 +145,10 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1400,
-        300
-      ]
+        1200,
+        0
+      ],
+      "id": "2521d13b-5f4c-41d4-b1e7-aa01effd54e8"
     },
     {
       "parameters": {
@@ -148,9 +158,10 @@
       "type": "n8n-nodes-base.executeCommand",
       "typeVersion": 1,
       "position": [
-        1600,
-        300
-      ]
+        1408,
+        0
+      ],
+      "id": "5ccb49ce-29b6-440c-91c2-a30dbfa60546"
     },
     {
       "parameters": {
@@ -160,35 +171,27 @@
       "type": "n8n-nodes-base.readBinaryFile",
       "typeVersion": 1,
       "position": [
-        1800,
-        300
-      ]
+        1600,
+        0
+      ],
+      "id": "3d0f8c1c-4e86-4695-bce9-4466fe8ed345"
     },
     {
       "parameters": {
-        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.FACEBOOK_PAGE_ID + \"/video_reels?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
         "method": "POST",
+        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.FACEBOOK_PAGE_ID + \"/video_reels?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
         "sendBody": true,
-        "sendQuery": false,
         "specifyBody": "json",
-        "jsonParameters": true,
-        "bodyParametersJson": "={ \"upload_phase\": \"start\" }",
-        "headerParametersUi": {
-          "parameter": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        }
+        "options": {}
       },
       "name": "Initialize Reel",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        2000,
-        300
-      ]
+        1808,
+        0
+      ],
+      "id": "9a32ebcb-f451-46fd-b3b7-293d9b87c5e1"
     },
     {
       "parameters": {
@@ -198,26 +201,16 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2200,
-        300
-      ]
+        2000,
+        0
+      ],
+      "id": "51bee227-6abb-4c43-bbf1-77a165e98c75"
     },
     {
       "parameters": {
-        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.FACEBOOK_PAGE_ID + \"/video_reels?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
         "method": "POST",
+        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.FACEBOOK_PAGE_ID + \"/video_reels?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
         "sendBody": true,
-        "specifyBody": "keypair",
-        "sendQuery": false,
-        "jsonParameters": true,
-        "headerParametersUi": {
-          "parameter": [
-            {
-              "name": "Content-Type",
-              "value": "application/x-www-form-urlencoded"
-            }
-          ]
-        },
         "bodyParameters": {
           "parameters": [
             {
@@ -237,15 +230,17 @@
               "value": "={{ $node[\"Extract Content\"].json.content }}"
             }
           ]
-        }
+        },
+        "options": {}
       },
       "name": "Publish Reel",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        2400,
-        300
-      ]
+        2208,
+        0
+      ],
+      "id": "616c545c-6755-4fe3-9952-d86164b49bfa"
     },
     {
       "parameters": {
@@ -255,73 +250,65 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2600,
-        300
-      ]
+        2400,
+        0
+      ],
+      "id": "a6fe3055-4bfc-46e2-b9b0-3850666cc34a"
     },
     {
       "parameters": {
-        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.INSTAGRAM_BUSINESS_ACCOUNT_ID + \"/media?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
         "method": "POST",
+        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.INSTAGRAM_BUSINESS_ACCOUNT_ID + \"/media?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
         "sendBody": true,
-        "sendQuery": false,
         "specifyBody": "json",
-        "jsonParameters": true,
-        "bodyParametersJson": "={ \"media_type\": \"REELS\", \"upload_type\": \"resumable\", \"caption\": {{ JSON.stringify($node[\"Extract Content\"].json.content) }} }",
-        "headerParametersUi": {
-          "parameter": [
-            {
-              "name": "Content-Type",
-              "value": "application/json"
-            }
-          ]
-        }
+        "jsonBody": "{\n  \"upload_type\":\"resumable\",\n  \"media_type\":\"REELS\"\n}",
+        "options": {}
       },
       "name": "Initialize IG Reel",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        2000,
-        500
-      ]
+        1808,
+        208
+      ],
+      "id": "853fc717-dda1-4289-b095-9e3b9ba5f79c"
     },
     {
       "parameters": {
-        "jsCode": "\nconst https = require('https');\nconst fs = require('fs');\nconst { URL } = require('url');\n\nconst initData = $('Initialize IG Reel').first().json;\nconst uploadUrl = initData.uri || initData.upload_url || initData.id;\nif (!uploadUrl) {\n  throw new Error(\"Could not find upload URL (uri) from Initialize IG Reel node. Response was: \" + JSON.stringify(initData));\n}\n\n// In a native JS Code node, environment variables are accessed via process.env\nconst accessToken = (process.env.FACEBOOK_PAGE_ACCESS_TOKEN || '').trim();\nif (!accessToken) {\n  throw new Error(\"Missing FACEBOOK_PAGE_ACCESS_TOKEN in environment!\");\n}\n\n// Get the specific English sign name for the file, fallback to dummy.mp4\nconst englishSign = $('Extract Content').first().json.english_sign;\nconst filePath = englishSign ? `/root/.n8n-files/${englishSign}.mp4` : '/root/.n8n-files/dummy.mp4';\n\nif (!fs.existsSync(filePath)) {\n  throw new Error(\"Video file not found! \" + filePath);\n}\n\nconst fileData = fs.readFileSync(filePath);\nconst parsedUrl = new URL(uploadUrl);\n\nconst options = {\n  hostname: parsedUrl.hostname,\n  path: parsedUrl.pathname + parsedUrl.search,\n  method: 'POST',\n  headers: {\n    'Authorization': `OAuth ${accessToken}`,\n    'offset': '0',\n    'file_size': fileData.length.toString(),\n    'Content-Length': fileData.length.toString()\n  }\n};\n\nreturn new Promise((resolve, reject) => {\n  const req = https.request(options, (res) => {\n    let responseData = '';\n    res.on('data', (chunk) => responseData += chunk);\n    res.on('end', () => {\n      try {\n        const parsed = JSON.parse(responseData || '{}');\n        resolve([{ json: { ...parsed, _status: res.statusCode } }]);\n      } catch (e) {\n        resolve([{ json: { raw: responseData, _status: res.statusCode } }]);\n      }\n    });\n  });\n\n  req.on('error', (e) => reject(e));\n  req.write(fileData);\n  req.end();\n});\n"
+        "jsCode": "\nconst https = require('https');\nconst fs = require('fs');\nconst { URL } = require('url');\n\nconst initData = $('Initialize IG Reel').first().json;\nconst uploadUrl = initData.uri || initData.upload_url || initData.id;\nif (!uploadUrl) {\n  throw new Error(\"Could not find upload URL (uri) from Initialize IG Reel node. Response was: \" + JSON.stringify(initData));\n}\n\n// In a native JS Code node, environment variables are accessed via process.env\nconst accessToken = ($env.FACEBOOK_PAGE_ACCESS_TOKEN || '').trim();\nif (!accessToken) {\n  throw new Error(\"Missing FACEBOOK_PAGE_ACCESS_TOKEN in environment!\");\n}\n\n// Get the specific English sign name for the file, fallback to dummy.mp4\nconst englishSign = $('Extract Content').first().json.english_sign;\nconst filePath = englishSign ? `/root/.n8n-files/${englishSign}.mp4` : '/root/.n8n-files/dummy.mp4';\n\nif (!fs.existsSync(filePath)) {\n  throw new Error(\"Video file not found! \" + filePath);\n}\n\nconst fileData = fs.readFileSync(filePath);\nconst parsedUrl = new URL(uploadUrl);\n\nconst options = {\n  hostname: parsedUrl.hostname,\n  path: parsedUrl.pathname + parsedUrl.search,\n  method: 'POST',\n  headers: {\n    'Authorization': `OAuth ${accessToken}`,\n    'offset': '0',\n    'file_size': fileData.length.toString(),\n    'Content-Length': fileData.length.toString()\n  }\n};\n\nreturn new Promise((resolve, reject) => {\n  const req = https.request(options, (res) => {\n    let responseData = '';\n    res.on('data', (chunk) => responseData += chunk);\n    res.on('end', () => {\n      try {\n        const parsed = JSON.parse(responseData || '{}');\n        resolve([{ json: { ...parsed, _status: res.statusCode } }]);\n      } catch (e) {\n        resolve([{ json: { raw: responseData, _status: res.statusCode } }]);\n      }\n    });\n  });\n\n  req.on('error', (e) => reject(e));\n  req.write(fileData);\n  req.end();\n});\n"
       },
       "name": "Upload IG Reel",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2200,
-        500
-      ]
+        2000,
+        208
+      ],
+      "id": "695ca437-4c41-4380-a101-23d4a0c20655"
     },
     {
       "parameters": {
-        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.INSTAGRAM_BUSINESS_ACCOUNT_ID + \"/media_publish?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
         "method": "POST",
+        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.INSTAGRAM_BUSINESS_ACCOUNT_ID + \"/media_publish?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
         "sendBody": true,
-        "sendQuery": false,
-        "specifyBody": "json",
-        "jsonParameters": true,
-        "bodyParametersJson": "={ \"creation_id\": \"{{ $node[\\\"Initialize IG Reel\\\"].json.id }}\" }",
-        "headerParametersUi": {
-          "parameter": [
+        "bodyParameters": {
+          "parameters": [
             {
-              "name": "Content-Type",
-              "value": "application/json"
+              "name": "creation_id",
+              "value": "={{ $node[\"Initialize IG Reel\"].json.id }}"
             }
           ]
-        }
+        },
+        "options": {}
       },
       "name": "Publish IG Reel",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4,
       "position": [
-        2400,
-        500
-      ]
+        2208,
+        208
+      ],
+      "id": "437de5a0-6ba7-46ff-bb7f-2184d415835f"
     },
     {
       "parameters": {
@@ -331,18 +318,21 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        2600,
-        500
-      ]
+        2400,
+        208
+      ],
+      "id": "31f9833b-df96-4449-bc30-ba65ecbac48b"
     }
   ],
+  "pinData": {},
   "connections": {
     "Cron": {
       "main": [
         [
           {
             "node": "Set Signs",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -352,7 +342,8 @@
         [
           {
             "node": "Split Signs",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -362,7 +353,8 @@
         [
           {
             "node": "Generate Horoscope",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -372,7 +364,8 @@
         [
           {
             "node": "Extract Content",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -382,7 +375,8 @@
         [
           {
             "node": "Save to PostgreSQL",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -392,7 +386,8 @@
         [
           {
             "node": "Generate & Save Voice",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -402,7 +397,8 @@
         [
           {
             "node": "Create Reel",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -412,7 +408,8 @@
         [
           {
             "node": "Read Video File",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -421,11 +418,12 @@
       "main": [
         [
           {
-            "node": "Initialize Reel",
-            "type": "main"
+            "node": "Initialize IG Reel",
+            "type": "main",
+            "index": 0
           },
           {
-            "node": "Initialize IG Reel",
+            "node": "Initialize Reel",
             "type": "main",
             "index": 0
           }
@@ -437,7 +435,8 @@
         [
           {
             "node": "Upload Reel",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -447,7 +446,8 @@
         [
           {
             "node": "Publish Reel",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -457,7 +457,8 @@
         [
           {
             "node": "Facebook Response Check",
-            "type": "main"
+            "type": "main",
+            "index": 0
           }
         ]
       ]
@@ -495,5 +496,18 @@
         ]
       ]
     }
-  }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "b4534e50-c7d8-4927-8106-64d4a4aed323",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "85eb66cfde6ba940fb2eacd85c7f0140143cada0c159cdffbfbb9e0539b49ed5"
+  },
+  "id": "gdnR9ghqjA2uFUn6",
+  "tags": []
 }

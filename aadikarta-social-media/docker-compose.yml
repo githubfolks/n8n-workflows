@@ -19,6 +19,14 @@ services:
     volumes:
       - .:/app
 
+  story-ui:
+    build: ./story-ui
+    ports:
+      - "8004:80"
+    networks:
+      - ai-automation-net
+    restart: unless-stopped
+
   image-service:
     build: ./image_service
     ports:

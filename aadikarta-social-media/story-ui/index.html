@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aadikarta Story Forge</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="background-elements">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <main class="container glass-panel">
+        <header>
+            <h1>Aadikarta Story Forge</h1>
+            <p class="subtitle">Transform your ideas into visual scenes</p>
+        </header>
+
+        <!-- View 1: Input Lines -->
+        <section id="view-input" class="view active">
+            <div class="input-group">
+                <label for="story-input">Enter your idea (will generate a 30-second video script):</label>
+                <textarea id="story-input"
+                    placeholder="e.g. A solitary astronaut discovers an ancient artifact on Mars..."></textarea>
+            </div>
+            <button id="btn-generate-story" class="primary-btn">
+                <span>Generate Story</span>
+                <div class="btn-glow"></div>
+            </button>
+        </section>
+
+        <!-- View 2: Loading (Story) -->
+        <section id="view-loading-story" class="view hidden">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p>Weaving your story together...</p>
+            </div>
+        </section>
+
+        <!-- View 3: Story View -->
+        <section id="view-story" class="view hidden">
+            <h2>Your Generated Story</h2>
+            <div class="story-content content-box" id="story-display">
+                <!-- Story text goes here -->
+            </div>
+            <div class="action-buttons">
+                <button id="btn-back-to-input" class="secondary-btn">Edit Input</button>
+                <button id="btn-generate-scenes" class="primary-btn">
+                    <span>Generate Scenes</span>
+                    <div class="btn-glow"></div>
+                </button>
+            </div>
+        </section>
+
+        <!-- View 4: Loading (Scenes) -->
+        <section id="view-loading-scenes" class="view hidden">
+            <div class="spinner-container">
+                <div class="spinner"></div>
+                <p>Visualizing scenes...</p>
+            </div>
+        </section>
+
+        <!-- View 5: Scenes View -->
+        <section id="view-scenes" class="view hidden">
+            <h2>Story Scenes</h2>
+            <div class="scenes-grid" id="scenes-container">
+                <!-- Scene cards go here -->
+            </div>
+            <div class="action-buttons">
+                <button id="btn-back-to-story" class="secondary-btn">Back to Story</button>
+                <button id="btn-publish" class="primary-btn">
+                    <span>Publish Video</span>
+                    <div class="btn-glow"></div>
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <!-- Modal for Scene Editing -->
+    <div id="editor-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <div class="modal-header">
+                <h3 id="modal-scene-title">Edit Scene</h3>
+                <button id="btn-close-modal" class="close-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <label for="scene-editor-textarea">Scene Description:</label>
+                <textarea id="scene-editor-textarea"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button id="btn-save-scene" class="primary-btn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>

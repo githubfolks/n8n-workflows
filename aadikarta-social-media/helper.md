@@ -68,4 +68,4 @@ description: ={{ $('Extract Content').first().json.content }}
 }
 
 # Publish IG Reel
-creation_id: {{ $node["Initialize IG Reel"].json.id }}
+creation_id:  

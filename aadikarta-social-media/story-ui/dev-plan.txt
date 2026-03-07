@@ -1,0 +1,25 @@
+
+Create a UI where I should be able to enter few lines. According to these texts an strory should be created. On the basis of story, scenes should be created. I should be able to view the scenes and make changes.
+
+These scenes are required to be used to create video of max 30 seconds. Make sure the length of the story accordingly.
+
+Use OpenAI key to get story/scenes content based on topic entered by user. Here is the scenario:
+1. User will enter 1-2 line statement(e.g. 
+What is the astrological aspect of wars in the world.
+What is the impact of Mangal and Vrisahpati in the world war.
+)
+2. OpenAI will the provide astrological facts in a textbox. User should be able to edit the  contents.
+3. On submit; scenes will be created. User should be able to edit scenes.
+
+Story:
+Mangal, representing Mars, and Vrisahpati, associated with Jupiter, are significant in Vedic astrology as they influence various aspects of life, including conflict and leadership. In the context of World Wars, Mangal symbolizes aggression and military action, while Vrisahpati signifies strategy and wisdom in leadership. Their combined influence can be interpreted as a duality of warfare—intense conflict driven by Mangal, balanced by strategic planning and moral considerations associated with Vrisahpati, impacting decisions and outcomes during the wars.
+
+Scene 1:
+A celestial view of the night sky filled with stars, zooming in on the vibrant red planet Mars, depicted with ancient Indian astrological symbols. Overlay of traditional Vedic astrological charts and diagrams showcasing Mangal's influence, with a subtle animation of flames representing aggression and military action. Background music features traditional Indian instruments, creating a sense of intensity.
+
+
+Scene 2:
+Transition to a majestic depiction of Jupiter, illustrated with golden hues and surrounded by symbols of wisdom and strategy. The scene features an ancient sage, perhaps a representation of Vrisahpati, sitting in meditation under a banyan tree, with scrolls and texts symbolizing knowledge. The atmosphere is serene, contrasting the previous scene, highlighting strategic planning and moral considerations.
+
+Scene 3:
+A dynamic montage showing historical battle scenes from Indian epics, integrating the duality of conflict and strategy. Visuals of warriors in traditional attire, alongside wise leaders making decisions, with a backdrop of temples and sacred symbols. The screen splits to show Mangal's aggression on one side and Vrisahpati's wisdom on the other, culminating in a powerful visual representation of their combined influence in warfare.

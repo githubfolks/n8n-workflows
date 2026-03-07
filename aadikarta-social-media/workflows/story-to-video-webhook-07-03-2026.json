@@ -1,0 +1,323 @@
+{
+  "name": "Story to Video (Webhook)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-video",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -3744,
+        1760
+      ],
+      "webhookId": "generate-video-story-webhook",
+      "id": "8db674c9-07ed-4ffd-b487-3c3ca0fee87f"
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst fs = require('fs');\nconst uniqueId = Date.now().toString() + Math.floor(Math.random() * 1000).toString();\nconst filePath = `/root/.n8n-files/story_video_${uniqueId}.mp4`;\n\n// For now, testing with dummy video\nif (!fs.existsSync('/root/.n8n-files/')){\n    fs.mkdirSync('/root/.n8n-files/', { recursive: true });\n}\ntry {\n    fs.copyFileSync('/data/n8n-work/dummy.mp4', filePath);\n} catch (e) {\n    console.log('Dummy video not found, continuing anyway.');\n}\n\nreturn [{\n  json: {\n    content: $json.body.story + '\\n\\n[Dev Test: ' + uniqueId + ']',\n    scenes: $json.body.scenes,\n    english_sign: `story_video_${uniqueId}`,\n    saved_file: filePath,\n    dummy_mode: true\n  }\n}];\n"
+      },
+      "name": "Extract Content",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -3552,
+        1760
+      ],
+      "id": "d1917d1c-78ac-4b42-ad21-730ca9f68d39"
+    },
+    {
+      "parameters": {
+        "filePath": "=/root/.n8n-files/{{ $node[\"Extract Content\"].json.english_sign }}.mp4"
+      },
+      "name": "Read Video File",
+      "type": "n8n-nodes-base.readBinaryFile",
+      "typeVersion": 1,
+      "position": [
+        -3104,
+        1760
+      ],
+      "id": "be26115f-ab0e-486f-9e8c-83dc49ff4708"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.FACEBOOK_PAGE_ID + \"/video_reels?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{ \"upload_phase\": \"start\" }",
+        "options": {}
+      },
+      "name": "Initialize Reel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2912,
+        1760
+      ],
+      "id": "90491bca-f7d8-4f62-a692-3dd63a4ae193"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n    const https = require('https');\n    const fs = require('fs');\n    const uploadUrl = $('Initialize Reel').first().json.upload_url;\n\n    // Secure Access Token via Memory\n    const accessToken = $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim();\n\n    // Identify the dynamic video file name\n    const filePath = \"/root/.n8n-files/dummy.mp4\";\n\n    if (!fs.existsSync(filePath)) {\n        throw new Error(\"Could not find video at: \" + filePath);\n    }\n\n    // Natively read the binary bytes from disk\n    const binaryBuffer = fs.readFileSync(filePath);\n\n    // Manually split the URL into Hostname and Path to bypass the missing URL class\n    const urlWithoutProtocol = uploadUrl.substring(8);\n    const firstSlashIndex = urlWithoutProtocol.indexOf('/');\n    const hostname = urlWithoutProtocol.substring(0, firstSlashIndex);\n    const path = urlWithoutProtocol.substring(firstSlashIndex);\n\n    const options = {\n        hostname: hostname,\n        path: path,\n        method: 'POST',\n        headers: {\n            'Authorization': `OAuth ${accessToken}`,\n            'offset': '0',\n            'file_size': binaryBuffer.length.toString(),\n            'Content-Length': binaryBuffer.length.toString(),\n            // THIS is the secret header that Facebook's server requires to parse the payload properly!\n            'Content-Type': 'application/x-www-form-urlencoded',\n            'Connection': 'keep-alive',\n            'Accept': '*/* '\n        }\n    };\n\n    return await new Promise((resolve, reject) => {\n        const req = https.request(options, (res) => {\n            let responseData = '';\n            res.on('data', (chunk) => responseData += chunk);\n            res.on('end', () => resolve([{ json: { body: responseData, status: res.statusCode } }]));\n        });\n\n        req.on('error', (e) => resolve([{ json: { execute_error: e.message } }]));\n        req.write(binaryBuffer);\n        req.end();\n    });\n\n} catch (masterError) {\n    return [{ json: { CRASH: masterError.message, stack: masterError.stack } }];\n}\n"
+      },
+      "name": "Upload Reel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2704,
+        1760
+      ],
+      "id": "414ec4ad-489c-4c88-afa2-ab96faa3ca9a"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.FACEBOOK_PAGE_ID + \"/video_reels?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "upload_phase",
+              "value": "finish"
+            },
+            {
+              "name": "video_id",
+              "value": "={{ $node[\"Initialize Reel\"].json.video_id }}"
+            },
+            {
+              "name": "video_state",
+              "value": "DRAFT"
+            },
+            {
+              "name": "description",
+              "value": "={{ $node[\"Extract Content\"].json.content }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Publish Reel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2512,
+        1760
+      ],
+      "id": "4e0b8f1a-ca9e-4e30-9064-e52f5a833803"
+    },
+    {
+      "parameters": {
+        "jsCode": "if ($json.error) {\n  throw new Error(`FACEBOOK API ERROR: ${$json.error.message} (Type: ${$json.error.type})`);\n}\nif (!$json.success) {\n  throw new Error(`FACEBOOK PUBLISH FAILED: Success flag not received. Response: ${JSON.stringify($json)}`);\n}\nreturn [{\n  json: {\n    facebook_success: true,\n    video_id: $node[\"Initialize Reel\"].json.video_id,\n    raw_response: $json\n  }\n}];"
+      },
+      "name": "Facebook Response Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2304,
+        1760
+      ],
+      "id": "b9b5d6d4-5d44-499a-87e9-cb7d1343956e"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.INSTAGRAM_BUSINESS_ACCOUNT_ID + \"/media?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"upload_type\":\"resumable\",\n  \"media_type\":\"REELS\"\n}\n",
+        "options": {}
+      },
+      "name": "Initialize IG Reel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2912,
+        1968
+      ],
+      "id": "867f72e1-e360-46eb-89a6-56d761f89612"
+    },
+    {
+      "parameters": {
+        "jsCode": "try {\n    const https = require('https');\n    const fs = require('fs');\n    const initData = $('Initialize IG Reel').first().json;\n    const uploadUrl = initData.uri || initData.upload_url || initData.id;\n    if (!uploadUrl) {\n      throw new Error(\"Could not find upload URL (uri) from Initialize IG Reel node. Response was: \" + JSON.stringify(initData));\n    }\n\n    // Secure Access Token via Memory\n    const accessToken = $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim();\n\n    // Identify the dynamic video file name\n    const filePath = \"/root/.n8n-files/dummy.mp4\";\n\n    if (!fs.existsSync(filePath)) {\n        throw new Error(\"Could not find video at: \" + filePath);\n    }\n\n    // Natively read the binary bytes from disk\n    const binaryBuffer = fs.readFileSync(filePath);\n\n    // Manually split the URL into Hostname and Path to bypass the missing URL class\n    const urlWithoutProtocol = uploadUrl.substring(8);\n    const firstSlashIndex = urlWithoutProtocol.indexOf('/');\n    const hostname = urlWithoutProtocol.substring(0, firstSlashIndex);\n    const path = urlWithoutProtocol.substring(firstSlashIndex);\n\n    const options = {\n        hostname: hostname,\n        path: path,\n        method: 'POST',\n        headers: {\n            'Authorization': `OAuth ${accessToken}`,\n            'offset': '0',\n            'file_size': binaryBuffer.length.toString(),\n            'Content-Length': binaryBuffer.length.toString(),\n            // THIS is the secret header that Facebook's server requires to parse the payload properly!\n            'Content-Type': 'application/x-www-form-urlencoded',\n            'Connection': 'keep-alive',\n            'Accept': '*/* '\n        }\n    };\n\n    return await new Promise((resolve, reject) => {\n        const req = https.request(options, (res) => {\n            let responseData = '';\n            res.on('data', (chunk) => responseData += chunk);\n            res.on('end', () => resolve([{ json: { body: responseData, status: res.statusCode } }]));\n        });\n\n        req.on('error', (e) => resolve([{ json: { execute_error: e.message } }]));\n        req.write(binaryBuffer);\n        req.end();\n    });\n\n} catch (masterError) {\n    return [{ json: { CRASH: masterError.message, stack: masterError.stack } }];\n}\n"
+      },
+      "name": "Upload IG Reel",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2704,
+        1968
+      ],
+      "id": "5906e065-5286-4fb8-9d20-aea3c16223f3"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{\"https://graph.facebook.com/v18.0/\" + $env.INSTAGRAM_BUSINESS_ACCOUNT_ID + \"/media_publish?access_token=\" + $env.FACEBOOK_PAGE_ACCESS_TOKEN.trim()}}",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "creation_id",
+              "value": "={{ $node[\"Initialize IG Reel\"].json.id }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "Publish IG Reel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [
+        -2512,
+        1968
+      ],
+      "id": "64b1c4a4-629f-4c60-b2ae-5e1db9a7cd8a"
+    },
+    {
+      "parameters": {
+        "jsCode": "if ($json.error) {\n  throw new Error(`INSTAGRAM API ERROR: ${$json.error.message} (Type: ${$json.error.type})`);\n}\nif (!$json.id) {\n  throw new Error(`INSTAGRAM PUBLISH FAILED: Failed to get published media ID. Response: ${JSON.stringify($json)}`);\n}\nreturn [{\n  json: {\n    instagram_success: true,\n    ig_media_id: $json.id,\n    raw_response: $json\n  }\n}];"
+      },
+      "name": "Instagram Response Check",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -2304,
+        1968
+      ],
+      "id": "617a2e83-65e5-4d5f-b0a8-aff4c416ffbf"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Extract Content",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Content": {
+      "main": [
+        [
+          {
+            "node": "Read Video File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Video File": {
+      "main": [
+        [
+          {
+            "node": "Initialize IG Reel",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Initialize Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize Reel": {
+      "main": [
+        [
+          {
+            "node": "Upload Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload Reel": {
+      "main": [
+        [
+          {
+            "node": "Publish Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish Reel": {
+      "main": [
+        [
+          {
+            "node": "Facebook Response Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Initialize IG Reel": {
+      "main": [
+        [
+          {
+            "node": "Upload IG Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload IG Reel": {
+      "main": [
+        [
+          {
+            "node": "Publish IG Reel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Publish IG Reel": {
+      "main": [
+        [
+          {
+            "node": "Instagram Response Check",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "483b1038-dcc4-442a-9f4d-afeb3abfdc6c",
+  "meta": {
+    "instanceId": "85eb66cfde6ba940fb2eacd85c7f0140143cada0c159cdffbfbb9e0539b49ed5"
+  },
+  "id": "i9b3NQgtifxDz6l2",
+  "tags": []
+}

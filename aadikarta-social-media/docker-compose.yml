@@ -18,8 +18,6 @@ services:
       - "8004:80"
     networks:
       - ai-automation-net
-    volumes:
-      - ./story-ui:/usr/share/nginx/html
     restart: unless-stopped
 
   image-service:

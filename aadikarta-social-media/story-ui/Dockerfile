@@ -1,12 +1,14 @@
+# Build stage
+FROM node:18-alpine as build
+WORKDIR /app
+COPY package*.json ./
+RUN npm install
+COPY . .
+RUN npm run build
+
+# Production stage
 FROM nginx:alpine
-
-# Copy static assets to nginx html directory
-COPY . /usr/share/nginx/html
-
-# Replace default nginx config with our custom one to proxy webhook
+COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Expose port 80
 EXPOSE 80
-
-# Default command is already appropriate for nginx:alpine
+CMD ["nginx", "-g", "daemon off;"]

@@ -8,11 +8,28 @@ from app.models.user import User
 from app.models.post import Post
 from app.models.project import Project
 
+from sqlalchemy.engine.url import make_url
+
+url = make_url(settings.DATABASE_URL)
+connect_args = {}
+
+# Handle search_path from query options (e.g., ?options=-csearch_path=schema_name)
+if "options" in url.query:
+    options = url.query["options"]
+    if "search_path=" in options:
+        schema = options.split("search_path=")[1].split()[0].replace(",", "")
+        connect_args["server_settings"] = {"search_path": schema}
+    
+    # Remove options from URL to prevent asyncpg from getting confused
+    query = dict(url.query)
+    del query["options"]
+    url = url.set(query=query)
+
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    url,
     echo=True,
     future=True,
-    connect_args={"server_settings": {"search_path": "ai_dev"}}
+    connect_args=connect_args
 )
 
 async def init_db():

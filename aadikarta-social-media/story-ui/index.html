@@ -24,8 +24,28 @@
             <p class="subtitle">Transform your ideas into visual scenes</p>
         </header>
 
+        <!-- View -1: Login -->
+        <section id="view-login" class="view active">
+            <div class="dashboard-header" style="justify-content: center;">
+                <h2>Login to Story Forge</h2>
+            </div>
+            <div class="input-group">
+                <label for="login-username">Username:</label>
+                <input type="text" id="login-username" placeholder="Enter username">
+            </div>
+            <div class="input-group">
+                <label for="login-password">Password:</label>
+                <input type="password" id="login-password" placeholder="Enter password">
+            </div>
+            <div id="login-error" class="error-msg hidden" style="text-align: center; margin-bottom: 1rem;">Invalid credentials. Please try again.</div>
+            <button id="btn-login" class="primary-btn">
+                <span>Login</span>
+                <div class="btn-glow"></div>
+            </button>
+        </section>
+
         <!-- View 0: Dashboard (Landing Page) -->
-        <section id="view-dashboard" class="view active">
+        <section id="view-dashboard" class="view hidden">
             <div class="dashboard-header">
                 <h2>My Stories</h2>
                 <button id="btn-create-new" class="primary-btn small-btn">

@@ -1,5 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // API Configuration
+    const API_BASE_URL = 'http://localhost:9001/api/v1';
+
     // Views
+    const viewLogin = document.getElementById('view-login');
     const viewDashboard = document.getElementById('view-dashboard');
     const viewInput = document.getElementById('view-input');
     const viewLoadingStory = document.getElementById('view-loading-story');
@@ -9,6 +13,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const viewProjectDetails = document.getElementById('view-project-details');
 
     // Elements
+    const loginUsername = document.getElementById('login-username');
+    const loginPassword = document.getElementById('login-password');
+    const loginError = document.getElementById('login-error');
     const projectsContainer = document.getElementById('projects-container');
     const storyInput = document.getElementById('story-input');
     const storyDisplay = document.getElementById('story-display');
@@ -21,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const detailStatusBadge = document.getElementById('detail-status-badge');
 
     // Buttons
+    const btnLogin = document.getElementById('btn-login');
     const btnCreateNew = document.getElementById('btn-create-new');
     const btnBackToDashFromInput = document.getElementById('btn-back-to-dash-from-input');
     const btnBackToDashFromDetails = document.getElementById('btn-back-to-dash-from-details');
@@ -43,19 +51,85 @@ document.addEventListener('DOMContentLoaded', () => {
     let generatedScenes = [];
     let currentlyEditingSceneId = null;
 
+    // Authentication
+    function getAuthToken() {
+        return localStorage.getItem('auth_token');
+    }
+
+    function setAuthToken(token) {
+        localStorage.setItem('auth_token', token);
+    }
+
+    function clearAuthToken() {
+        localStorage.removeItem('auth_token');
+    }
+
+    function getAuthHeaders() {
+        const token = getAuthToken();
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+        };
+    }
+
+    async function handleLogin() {
+        const username = loginUsername.value.trim();
+        const password = loginPassword.value.trim();
+
+        if (!username || !password) {
+            loginError.textContent = 'Please enter both username and password.';
+            loginError.classList.remove('hidden');
+            return;
+        }
+
+        btnLogin.disabled = true;
+        loginError.classList.add('hidden');
+
+        try {
+            // Updated to match the available port
+            const response = await fetch('http://localhost:9001/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, password })
+            });
+
+            if (!response.ok) {
+                throw new Error('Invalid credentials');
+            }
+
+            const data = await response.json();
+            setAuthToken(data.access_token || data.token || 'mock-token'); // Fallback if API response differs
+            
+            // Success - load dashboard
+            fetchProjects();
+            switchView(viewDashboard);
+        } catch (error) {
+            console.error('Login error:', error);
+            loginError.textContent = 'Login failed. Please check your credentials.';
+            loginError.classList.remove('hidden');
+        } finally {
+            btnLogin.disabled = false;
+        }
+    }
+
+    btnLogin.addEventListener('click', handleLogin);
+
+    // Enter key to login
+    loginPassword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+    });
+
     // View Switching Logic
     function switchView(viewToShow) {
-        const views = [viewDashboard, viewInput, viewLoadingStory, viewStory, viewLoadingScenes, viewScenes, viewProjectDetails];
+        const views = [viewLogin, viewDashboard, viewInput, viewLoadingStory, viewStory, viewLoadingScenes, viewScenes, viewProjectDetails];
         views.forEach(v => {
             if (v === viewToShow) {
-                // Remove hidden first, wait a ms for display:block to apply, then add active
                 v.classList.remove('hidden');
                 setTimeout(() => {
                     v.classList.add('active');
                 }, 10);
             } else {
                 v.classList.remove('active');
-                // Wait for fade out animation before hiding
                 setTimeout(() => {
                     if (!v.classList.contains('active')) {
                         v.classList.add('hidden');
@@ -91,26 +165,21 @@ document.addEventListener('DOMContentLoaded', () => {
         currentTopic = inputText;
         switchView(viewLoadingStory);
 
-        // Check if the input is requesting the mock story
-        console.log("Generating story for:", inputText);
-        if (inputText.toLowerCase().includes("mangal") || inputText.toLowerCase().includes("vrisahpati") || inputText.toLowerCase().includes("test mock")) {
-            console.log("Using Mock Story Data");
-            setTimeout(() => {
-                generatedStory = "Mangal, representing Mars, and Vrisahpati, associated with Jupiter, are significant in Vedic astrology as they influence various aspects of life, including conflict and leadership. In the context of World Wars, Mangal symbolizes aggression and military action, while Vrisahpati signifies strategy and wisdom in leadership. Their combined influence can be interpreted as a duality of warfare—intense conflict driven by Mangal, balanced by strategic planning and moral considerations associated with Vrisahpati, impacting decisions and outcomes during the wars.";
-                storyDisplay.textContent = generatedStory;
-                switchView(viewStory);
-            }, 1000); // Simulate network delay
-            return;
-        }
-
         try {
-            const response = await fetch('http://localhost:8003/api/v1/story/generate-story', {
+            const response = await fetch(`${API_BASE_URL}/story/generate-story`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ topic: inputText })
             });
 
-            if (!response.ok) throw new Error('API Error');
+            if (!response.ok) {
+                if (response.status === 401) {
+                    clearAuthToken();
+                    switchView(viewLogin);
+                    return;
+                }
+                throw new Error('API Error');
+            }
             const data = await response.json();
 
             generatedStory = data.story;
@@ -131,29 +200,21 @@ document.addEventListener('DOMContentLoaded', () => {
     btnGenerateScenes.addEventListener('click', async () => {
         switchView(viewLoadingScenes);
 
-        // Check if we are using the mock story, use mock scenes
-        if (generatedStory.includes("Mangal, representing Mars")) {
-            console.log("Using Mock Scene Data");
-            setTimeout(() => {
-                generatedScenes = [
-                    { id: 1, description: "A celestial view of the night sky filled with stars, zooming in on the vibrant red planet Mars, depicted with ancient Indian astrological symbols. Overlay of traditional Vedic astrological charts and diagrams showcasing Mangal's influence, with a subtle animation of flames representing aggression and military action. Background music features traditional Indian instruments, creating a sense of intensity." },
-                    { id: 2, description: "Transition to a majestic depiction of Jupiter, illustrated with golden hues and surrounded by symbols of wisdom and strategy. The scene features an ancient sage, perhaps a representation of Vrisahpati, sitting in meditation under a banyan tree, with scrolls and texts symbolizing knowledge. The atmosphere is serene, contrasting the previous scene, highlighting strategic planning and moral considerations." },
-                    { id: 3, description: "A dynamic montage showing historical battle scenes from Indian epics, integrating the duality of conflict and strategy. Visuals of warriors in traditional attire, alongside wise leaders making decisions, with a backdrop of temples and sacred symbols. The screen splits to show Mangal's aggression on one side and Vrisahpati's wisdom on the other, culminating in a powerful visual representation of their combined influence in warfare." }
-                ];
-                renderScenes();
-                switchView(viewScenes);
-            }, 1000); // Simulate network delay
-            return;
-        }
-
         try {
-            const response = await fetch('http://localhost:8003/api/v1/story/generate-scenes', {
+            const response = await fetch(`${API_BASE_URL}/story/generate-scenes`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({ story: generatedStory })
             });
 
-            if (!response.ok) throw new Error('API Error');
+            if (!response.ok) {
+                if (response.status === 401) {
+                    clearAuthToken();
+                    switchView(viewLogin);
+                    return;
+                }
+                throw new Error('API Error');
+            }
             generatedScenes = await response.json();
 
             renderScenes();
@@ -176,10 +237,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btnPublish.disabled = true;
 
         try {
-            // 1. Save data to Postgres via FastAPI
-            const saveResponse = await fetch('/api/v1/story/save-draft', {
+            const saveResponse = await fetch(`${API_BASE_URL}/story/save-draft`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: getAuthHeaders(),
                 body: JSON.stringify({
                     topic: currentTopic,
                     story: generatedStory,
@@ -191,15 +251,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const saveResult = await saveResponse.json();
             const projectId = saveResult.project_id;
 
-            // 2. Trigger Publishing via FastAPI (which invokes n8n)
             span.textContent = 'Triggering n8n...';
-            const publishResponse = await fetch(`/api/v1/story/publish-project/${projectId}`, {
-                method: 'POST'
+            const publishResponse = await fetch(`${API_BASE_URL}/story/publish-project/${projectId}`, {
+                method: 'POST',
+                headers: getAuthHeaders()
             });
 
             if (!publishResponse.ok) throw new Error('Failed to trigger publishing');
 
             alert('Data saved to database and Video generation workflow triggered successfully!');
+            fetchProjects(); // Refresh dashboard
+            switchView(viewDashboard);
         } catch (error) {
             console.error('Error in publish flow:', error);
             alert('Failed to publish. ' + error.message);
@@ -224,7 +286,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnCloseModal.addEventListener('click', closeModal);
 
-    // Close on backdrop click
     modal.addEventListener('click', (e) => {
         if (e.target === modal) closeModal();
     });
@@ -240,9 +301,8 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal();
     });
 
-    // Rendering Scenes logic
     function renderScenes() {
-        scenesContainer.innerHTML = ''; // clear exiting
+        scenesContainer.innerHTML = '';
         generatedScenes.forEach(scene => {
             const card = document.createElement('div');
             card.className = 'scene-card';
@@ -257,7 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Utilities
     function escapeHtml(unsafe) {
         return unsafe
             .replace(/&/g, "&amp;")
@@ -267,15 +326,19 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/'/g, "&#039;");
     }
 
-    // Note: Mock generators removed in favor of real API calls.
-
-    // ============================================
-    // Dashboard & History Logic
-    // ============================================
     async function fetchProjects() {
         try {
-            const response = await fetch('/api/v1/story/projects');
-            if (!response.ok) throw new Error('Failed to fetch projects');
+            const response = await fetch(`${API_BASE_URL}/story/projects`, {
+                headers: getAuthHeaders()
+            });
+            if (!response.ok) {
+                if (response.status === 401) {
+                    clearAuthToken();
+                    switchView(viewLogin);
+                    return;
+                }
+                throw new Error('Failed to fetch projects');
+            }
             const projects = await response.json();
             renderDashboard(projects);
         } catch (error) {
@@ -293,9 +356,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         projects.forEach(project => {
             const card = document.createElement('div');
-            card.className = 'scene-card'; // Reuse the glass card style
+            card.className = 'scene-card';
 
-            // Format Date
             const dateObj = new Date(project.created_at);
             const dateStr = dateObj.toLocaleDateString() + ' ' + dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
@@ -317,7 +379,6 @@ document.addEventListener('DOMContentLoaded', () => {
         detailTopicTitle.textContent = project.topic_prompt;
         detailStoryDisplay.textContent = project.generated_story || "No story text.";
 
-        // Render Scenes visually
         detailScenesContainer.innerHTML = '';
         if (project.scenes_json && Array.isArray(project.scenes_json)) {
             project.scenes_json.forEach(scene => {
@@ -333,13 +394,10 @@ document.addEventListener('DOMContentLoaded', () => {
             detailScenesContainer.innerHTML = '<p>No scenes generated.</p>';
         }
 
-        // Setup Video
         detailVideoContainer.innerHTML = '';
         detailStatusBadge.textContent = 'Status: ' + project.status.toUpperCase();
 
         if (project.status === 'completed' && project.video_path) {
-            // Because the frontend and backend share the Docker filesystem through nginx proxy
-            // The video can be accessed directly or we just provide a placeholder indicator
             detailStatusBadge.className = 'status-badge mt-1 success-bg';
             detailVideoContainer.className = '';
             detailVideoContainer.innerHTML = `
@@ -362,5 +420,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Initialize
-    fetchProjects();
+    if (getAuthToken()) {
+        fetchProjects();
+        switchView(viewDashboard);
+    } else {
+        switchView(viewLogin);
+    }
 });

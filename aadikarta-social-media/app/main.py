@@ -9,6 +9,11 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from prometheus_fastapi_instrumentator import Instrumentator
+from pydantic import BaseModel
+from app.services.auth import AuthService
+from app.api import deps
+from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import Depends, HTTPException
 
 # Setup structlog
 structlog.configure(
@@ -51,3 +56,18 @@ async def on_startup():
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/login")
+async def login(
+    request: LoginRequest,
+    session: AsyncSession = Depends(deps.get_session)
+):
+    auth_service = AuthService(session)
+    user = await auth_service.authenticate(request.username, request.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid username or password")
+    return auth_service.create_token(user)

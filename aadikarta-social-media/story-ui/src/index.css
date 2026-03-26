@@ -1,15 +1,15 @@
 :root {
-    --bg-color: #0d0e15;
-    --text-color: #e2e8f0;
-    --text-muted: #94a3b8;
-    --primary: #6366f1;
-    --primary-hover: #4f46e5;
-    --secondary: #1e293b;
-    --secondary-hover: #334155;
-    --accent: #ec4899;
-    --glass-bg: rgba(30, 41, 59, 0.4);
-    --glass-border: rgba(255, 255, 255, 0.1);
-    --font-family: 'Outfit', sans-serif;
+    --bg-color: #f1f5f9; /* Light Slate Gray/White */
+    --text-color: #334155; /* Slate Gray */
+    --text-muted: #64748b; /* Muted Gray */
+    --primary: #3b82f6; /* Blue */
+    --primary-hover: #2563eb; /* Darker Blue */
+    --secondary: #e2e8f0; /* Light Gray */
+    --secondary-hover: #cbd5e1; /* Darker Gray */
+    --accent: #93c5fd; /* Light Blue */
+    --glass-bg: rgba(255, 255, 255, 0.8); /* White Glass */
+    --glass-border: rgba(59, 130, 246, 0.1); /* Light Blue Border */
+    --font-family: 'Open Sans', sans-serif;
 }
 
 * {
@@ -29,6 +29,8 @@ body {
     overflow-x: hidden;
     position: relative;
     padding: 2rem;
+    text-align: justify;
+    font-weight: 400; /* Remove bold globally */
 }
 
 /* Dynamic Animated Background */
@@ -53,7 +55,7 @@ body {
 .blob-1 {
     width: 400px;
     height: 400px;
-    background: radial-gradient(circle, var(--primary), transparent 70%);
+    background: radial-gradient(circle, var(--accent), transparent 70%);
     top: 10%;
     left: 10%;
 }
@@ -61,7 +63,7 @@ body {
 .blob-2 {
     width: 500px;
     height: 500px;
-    background: radial-gradient(circle, var(--accent), transparent 70%);
+    background: radial-gradient(circle, var(--primary), transparent 70%);
     bottom: 20%;
     right: 10%;
     animation-delay: -5s;
@@ -70,7 +72,7 @@ body {
 .blob-3 {
     width: 300px;
     height: 300px;
-    background: radial-gradient(circle, #8b5cf6, transparent 70%);
+    background: radial-gradient(circle, var(--secondary-hover), transparent 70%);
     top: 50%;
     left: 50%;
     animation-delay: -10s;
@@ -110,10 +112,8 @@ header {
 
 h1 {
     font-size: 3rem;
-    font-weight: 800;
-    background: linear-gradient(to right, #e2e8f0, #94a3b8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
+    font-weight: 400; /* Removed bold */
+    color: var(--text-color);
     margin-bottom: 0.5rem;
 }
 
@@ -125,8 +125,8 @@ h1 {
 h2 {
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
-    font-weight: 600;
-    color: #f8fafc;
+    font-weight: 400; /* Removed bold */
+    color: var(--text-color);
 }
 
 /* Views Navigation */
@@ -163,7 +163,7 @@ textarea {
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 12px;
     padding: 1rem;
-    color: white;
+    color: var(--text-color);
     font-family: inherit;
     font-size: 1rem;
     resize: vertical;
@@ -193,13 +193,14 @@ textarea:focus {
     min-height: 150px;
     padding: 1.5rem;
     border-radius: 12px;
-    background: rgba(15, 23, 42, 0.6);
+    background: rgba(255, 255, 255, 0.4); /* Lighter bg */
     border: 1px solid var(--glass-border);
     color: var(--text-color);
-    font-size: 1.1rem;
+    font-size: 1rem;
     line-height: 1.6;
     margin-bottom: 2rem;
     white-space: pre-wrap;
+    text-align: justify;
 }
 
 /* Buttons */
@@ -207,7 +208,7 @@ button {
     cursor: pointer;
     font-family: inherit;
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 400; /* Removed bold */
     border: none;
     border-radius: 12px;
     padding: 0.8rem 1.5rem;
@@ -333,7 +334,7 @@ button {
 .scene-number {
     font-size: 0.9rem;
     color: var(--accent);
-    font-weight: 800;
+    font-weight: 400; /* Removed bold */
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 1px;
@@ -342,12 +343,13 @@ button {
 .scene-desc {
     font-size: 1rem;
     color: #e2e8f0;
-    line-height: 1.5;
+    text-align: justify;
     flex-grow: 1;
     display: -webkit-box;
     -webkit-line-clamp: 4;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    line-clamp: 4; /* Standard property for compatibility */
 }
 
 .edit-hint {
@@ -407,7 +409,8 @@ button {
 
 .modal-header h3 {
     font-size: 1.5rem;
-    color: #f8fafc;
+    color: var(--text-color);
+    font-weight: 400; /* Removed bold */
 }
 
 .close-btn {
@@ -486,7 +489,7 @@ button {
     padding: 0.25rem 0.75rem;
     border-radius: 9999px;
     font-size: 0.75rem;
-    font-weight: 600;
+    font-weight: 400; /* Removed bold */
     letter-spacing: 0.5px;
 }
 

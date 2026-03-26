@@ -1,0 +1,110 @@
+# Coolify-Ready Docker Compose
+# Use this in your Coolify Project -> Docker Compose resource
+
+version: '3.8'
+
+services:
+  # --- UI (Main Frontend) ---
+  story-ui:
+    build:
+      context: .
+      dockerfile: ./story-ui/Dockerfile
+    restart: unless-stopped
+    # Domain in Coolify UI: https://aadikarta.org
+    networks:
+      - ai-automation-net
+
+  # --- API Gateway / Main Backend ---
+  app:
+    build: .
+    env_file: .env
+    # Domain in Coolify UI: https://api.aadikarta.org
+    networks:
+      - ai-automation-net
+    volumes:
+      - .:/app
+
+  # --- Microservices ---
+  image-service:
+    build:
+      context: .
+      dockerfile: ./image_service/Dockerfile
+    env_file: .env
+    # Domain in Coolify UI: https://image.aadikarta.org
+    depends_on:
+      - stable-diffusion
+    networks:
+      - ai-automation-net
+    environment:
+      - SD_API_URL=http://stable-diffusion:7860
+
+  video-service:
+    build:
+      context: .
+      dockerfile: ./video_service/Dockerfile
+    env_file: .env
+    # Domain in Coolify UI: https://video.aadikarta.org
+    networks:
+      - ai-automation-net
+
+  # --- AI Infrastructure ---
+  stable-diffusion:
+    image: siutin/stable-diffusion-webui-docker:latest-cpu
+    environment:
+      - CLI_ARGS=--api --listen --no-half --skip-torch-cuda-test
+    command: ./webui.sh --listen --port 7860 --api --no-half --skip-torch-cuda-test
+    volumes:
+      - sd_data:/data
+    networks:
+      - ai-automation-net
+    restart: unless-stopped
+    stdin_open: true
+    tty: true
+
+  # --- Workflow Automation ---
+  n8n:
+    build:
+      context: .
+      dockerfile: Dockerfile.n8n
+    user: root
+    # Domain in Coolify UI: https://n8n.aadikarta.org
+    environment:
+      - N8N_HOST=n8n.aadikarta.org
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - NODE_ENV=production
+      - WEBHOOK_URL=https://n8n.aadikarta.org/
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=host.docker.internal # Or your DB server IP
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=app_db
+      - DB_POSTGRESDB_USER=postgres
+      - DB_POSTGRESDB_PASSWORD=${DB_PASSWORD}
+      - DB_POSTGRESDB_SCHEMA=aadikarta_n8n
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./n8n-data:/data/n8n-work
+    networks:
+      - ai-automation-net
+
+networks:
+  ai-automation-net:
+    driver: bridge
+
+volumes:
+  n8n_data:
+  sd_data:
+
+# --------------------------------------------------------------------------
+# COOLIFY SETUP TIPS:
+# 1. In the Coolify UI Service settings, map the following "Domains":
+#    - story-ui: https://aadikarta.org (Port 80)
+#    - app: https://api.aadikarta.org (Port 8000)
+#    - image-service: https://image.aadikarta.org (Port 8001)
+#    - video-service: https://video.aadikarta.org (Port 8002)
+#    - n8n: https://n8n.aadikarta.org (Port 5678)
+#
+# 2. Add your secrets (API Keys, DB Passwords) in the "Environment Variables" 
+#    tab of the Coolify Project.
+# --------------------------------------------------------------------------

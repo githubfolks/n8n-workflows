@@ -7,6 +7,8 @@ from sqlmodel import SQLModel
 from app.models.user import User
 from app.models.post import Post
 from app.models.project import Project
+from app.core import security
+from sqlmodel import select
 
 from sqlalchemy.engine.url import make_url
 
@@ -36,6 +38,26 @@ async def init_db():
     async with engine.begin() as conn:
         # await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
+    
+    # Seed admin user if it doesn't exist
+    from sqlalchemy.ext.asyncio import AsyncSession
+    async_session = sessionmaker(
+        engine, class_=AsyncSession, expire_on_commit=False
+    )
+    async with async_session() as session:
+        result = await session.execute(select(User).where(User.email == "admin@test.com"))
+        user = result.scalars().first()
+        if not user:
+            user = User(
+                email="admin@test.com",
+                hashed_password=security.get_password_hash("adminpassword"),
+                is_superuser=True,
+                is_active=True,
+                full_name="Admin User"
+            )
+            session.add(user)
+            await session.commit()
+            print("Admin user seeded successfully")
 
 async def get_session() -> AsyncSession:
     async_session = sessionmaker(

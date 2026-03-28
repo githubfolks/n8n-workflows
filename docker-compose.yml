@@ -22,7 +22,10 @@ services:
       - .:/app
 
   story-ui:
-    build: ./story-ui
+    build:
+      context: ./story-ui
+      args:
+        - VITE_API_BASE_URL=${VITE_API_BASE_URL}
     ports:
       - "8004:80"
     networks:

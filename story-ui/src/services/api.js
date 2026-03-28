@@ -1,4 +1,4 @@
-const API_BASE_URL = 'http://localhost:9001/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9001/api/v1';
 
 export const getAuthHeaders = () => {
   const token = localStorage.getItem('auth_token');
@@ -9,7 +9,8 @@ export const getAuthHeaders = () => {
 };
 
 export const login = async (username, password) => {
-  const response = await fetch('http://localhost:9001/login', {
+  const loginUrl = API_BASE_URL.replace('/api/v1', '/login');
+  const response = await fetch(loginUrl, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ username, password })

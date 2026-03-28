@@ -89,6 +89,7 @@ async def publish_project_api(project_id: int, db: AsyncSession = Depends(get_se
         import httpx
         async with httpx.AsyncClient() as client:
             webhook_url = settings.N8N_WEBHOOK_URL
+            logger.info(f"Triggering n8n webhook: {webhook_url}")
             n8n_payload = {
                 "project_id": project.id,
                 "story": project.generated_story,

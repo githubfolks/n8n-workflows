@@ -56,8 +56,10 @@ class Settings(BaseSettings):
     
     @validator("N8N_WEBHOOK_URL", pre=True)
     def assemble_n8n_url(cls, v: str) -> str:
-        if v and not v.startswith(("http://", "https://")):
-            return f"http://{v}"
+        if isinstance(v, str):
+            v = v.strip()
+            if v and not v.startswith(("http://", "https://")):
+                return f"http://{v}"
         return v
 
     model_config = SettingsConfigDict(case_sensitive=True, env_file=".env", extra="ignore")

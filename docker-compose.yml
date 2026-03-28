@@ -14,6 +14,8 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
       - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
       - LLM_PROVIDER=${LLM_PROVIDER}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     networks:
       - ai-automation-net
     volumes:
@@ -78,11 +80,11 @@ services:
     ports:
       - "5678:5678"
     environment:
-      - N8N_HOST=n8n
+      - N8N_HOST=${N8N_PUBLIC_DOMAIN_OR_IP}
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
       - NODE_ENV=production
-      - WEBHOOK_URL=http://localhost:5678/
+      - WEBHOOK_URL=http://${N8N_PUBLIC_DOMAIN_OR_IP}:5678/
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=host.docker.internal
       - DB_POSTGRESDB_PORT=5432
@@ -101,6 +103,8 @@ services:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
       - NODE_FUNCTION_ALLOW_BUILTIN=fs,https,url
       - NODES_EXCLUDE=[]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     volumes:
       - n8n_data:/home/node/.n8n
       - ./n8n-data:/data/n8n-work

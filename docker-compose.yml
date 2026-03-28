@@ -6,7 +6,14 @@ services:
     build: .
     ports:
       - "9001:8000"
-    env_file: .env
+    # env_file: .env
+    environment:
+      - DATABASE_URL=${DATABASE_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - SECRET_KEY=${SECRET_KEY}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES}
+      - BACKEND_CORS_ORIGINS=${BACKEND_CORS_ORIGINS}
+      - LLM_PROVIDER=${LLM_PROVIDER}
     networks:
       - ai-automation-net
     volumes:
@@ -24,19 +31,23 @@ services:
     build: ./image_service
     ports:
       - "8001:8001"
-    env_file: .env
+    # env_file: .env
     depends_on:
       - stable-diffusion
     networks:
       - ai-automation-net
     environment:
       - SD_API_URL=http://stable-diffusion:7860
+      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
 
   video-service:
     build: ./video_service
     ports:
       - "8002:8002"
-    env_file: .env
+    # env_file: .env
+    environment:
+      - ELEVENLABS_API_KEY=${ELEVENLABS_API_KEY}
+      - ELEVENLABS_VOICE_ID=${ELEVENLABS_VOICE_ID}
     networks:
       - ai-automation-net
 

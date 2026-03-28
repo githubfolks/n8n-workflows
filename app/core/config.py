@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     VIDEO_SERVICE_URL: str = "http://video-service:8002"
     
     # CORS
-    BACKEND_CORS_ORIGINS: List[str] = []
+    BACKEND_CORS_ORIGINS: Union[List[str], str] = []
 
     @validator("BACKEND_CORS_ORIGINS", pre=True)
     def assemble_cors_origins(cls, v: Union[str, List[str]]) -> List[str]:

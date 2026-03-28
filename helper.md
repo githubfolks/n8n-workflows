@@ -69,3 +69,7 @@ description: ={{ $('Extract Content').first().json.content }}
 
 # Publish IG Reel
 creation_id:  
+
+Which planets affecting war in gulf
+
+The planets that are often discussed in the context of war in the Gulf region include Mars, symbolizing aggression and conflict, and Jupiter, representing expansion and power. Additionally, Saturn can signify limitations and challenges. These celestial bodies are believed to influence geopolitical dynamics and military actions, shaping the motivations and strategies of nations involved in conflicts in the Gulf.

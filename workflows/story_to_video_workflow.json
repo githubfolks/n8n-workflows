@@ -215,7 +215,7 @@
     {
       "parameters": {
         "method": "POST",
-        "url": "http://app:8003/api/v1/story/webhook/n8n/video-completed",
+        "url": "http://app:8000/api/v1/story/webhook/n8n/video-completed",
         "sendBody": true,
         "specifyBody": "keypair",
         "bodyParameters": {

@@ -1,0 +1,52 @@
+{
+  "name": "Generate Video Webhook",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "generate-video",
+        "options": {}
+      },
+      "id": "1e5e685d-8b08-41ed-afef-e84c98696051",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        250,
+        300
+      ],
+      "webhookId": "generate-video"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "e0d0f26a-ebca-4373-a5e0-57bb8e1d97ab",
+      "name": "No-op",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        450,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "No-op",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": []
+}

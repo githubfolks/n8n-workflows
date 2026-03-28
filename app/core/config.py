@@ -34,6 +34,9 @@ class Settings(BaseSettings):
     # Video Service
     VIDEO_SERVICE_URL: str = "http://video-service:8002"
     
+    # n8n
+    N8N_WEBHOOK_URL: str = "http://n8n:5678/webhook/generate-video"
+    
     # CORS
     BACKEND_CORS_ORIGINS: Union[List[str], str] = []
 

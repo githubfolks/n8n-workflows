@@ -87,7 +87,7 @@ async def publish_project_api(project_id: int, db: AsyncSession = Depends(get_se
         # 3. Trigger n8n webhook
         import httpx
         async with httpx.AsyncClient() as client:
-            webhook_url = "http://n8n:5678/webhook-test/generate-video"
+            webhook_url = settings.N8N_WEBHOOK_URL
             n8n_payload = {
                 "project_id": project.id,
                 "story": project.generated_story,

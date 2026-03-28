@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Body, HTTPException, Depends, UploadFile, File, Form
+import logging
 from pydantic import BaseModel
 from app.core.config import settings
 from typing import List, Any
@@ -8,6 +9,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.services.story import StoryService
 from app.core.db import get_session
 from app.models.project import Project
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 

@@ -87,7 +87,7 @@ function App() {
                   setView('loading-scenes');
                   try {
                     const data = await generateScenes(generatedStory);
-                    setGeneratedScenes(data.scenes);
+                    setGeneratedScenes(Array.isArray(data) ? data : (data.scenes || []));
                     setView('scenes');
                   } catch (err) {
                     alert('Scene generation failed');

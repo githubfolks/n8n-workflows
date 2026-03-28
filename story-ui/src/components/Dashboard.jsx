@@ -10,7 +10,7 @@ function Dashboard({ token, onCreateNew, onViewDetails }) {
     const loadProjects = async () => {
       try {
         const data = await fetchProjects();
-        setProjects(data);
+        setProjects(data || []);
       } catch (err) {
         setError('Could not load active projects.');
       } finally {

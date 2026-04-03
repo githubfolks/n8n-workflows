@@ -82,11 +82,11 @@ services:
     ports:
       - "5678:5678"
     environment:
-      - N8N_HOST=${N8N_PUBLIC_DOMAIN_OR_IP}
-      - N8N_PORT=5678
+      - N8N_HOST=n8n.aadikarta.org
       - N8N_PROTOCOL=https
       - NODE_ENV=production
-      - WEBHOOK_URL=https://${N8N_PUBLIC_DOMAIN_OR_IP}/
+      - WEBHOOK_URL=https://n8n.aadikarta.org/
+      - N8N_EDITOR_BASE_URL=https://n8n.aadikarta.org/
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=host.docker.internal
       - DB_POSTGRESDB_PORT=5432

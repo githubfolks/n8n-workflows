@@ -113,11 +113,14 @@ services:
       - n8n_data:/home/node/.n8n
       - ./n8n-data:/data/n8n-work
     networks:
-      - ai-automation-net
+      - default
+      - global-proxy-network
 
 networks:
   ai-automation-net:
     driver: bridge
+  global-proxy-network:
+    external: true
 
 volumes:
   n8n_data:

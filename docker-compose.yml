@@ -84,9 +84,9 @@ services:
     environment:
       - N8N_HOST=${N8N_PUBLIC_DOMAIN_OR_IP}
       - N8N_PORT=5678
-      - N8N_PROTOCOL=http
+      - N8N_PROTOCOL=https
       - NODE_ENV=production
-      - WEBHOOK_URL=http://${N8N_PUBLIC_DOMAIN_OR_IP}:5678/
+      - WEBHOOK_URL=https://${N8N_PUBLIC_DOMAIN_OR_IP}/
       - DB_TYPE=postgresdb
       - DB_POSTGRESDB_HOST=host.docker.internal
       - DB_POSTGRESDB_PORT=5432
@@ -105,7 +105,7 @@ services:
       - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
       - NODE_FUNCTION_ALLOW_BUILTIN=fs,https,url
       - NODES_EXCLUDE=[]
-      - N8N_SECURE_COOKIE=false
+      - N8N_SECURE_COOKIE=true
       - N8N_LICENSE_KEY=${N8N_LICENSE_KEY}
     extra_hosts:
       - "host.docker.internal:host-gateway"
